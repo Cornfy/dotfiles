@@ -1,5 +1,0 @@
-[buttons]
-list = lock logout reboot shutdown
-
-[layout]
-orientation = horizontal

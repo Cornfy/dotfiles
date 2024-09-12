@@ -2,8 +2,8 @@
     "layer": "bottom",
     "position": "bottom", // Waybar position (top|bottom|left|right)
     "height": 30,
-    "modules-left": ["custom/launcher", "tray"],
-    "modules-right": ["idle_inhibitor", "temperature", "cpu", "memory", "network", "custom/network_traffic", "backlight", "pulseaudio", "clock", "battery" , "custom/power"],
+    "modules-left": ["custom/launcher", "tray", "custom/network_traffic"],
+    "modules-right": ["idle_inhibitor", "temperature", "cpu", "memory", "network", "backlight", "pulseaudio", "clock", "battery" , "custom/power"],
 
  // Modules configuration
 
@@ -80,8 +80,8 @@
     },
 
     "clock": {
-        "format": "  {:%Y-%m-%d, %a    %H:%M:%S}",	//24 hour format
-        "format-alt": "  {:%Y-%m-%d, %a    %I:%M:%S %p}",	//12 hour format
+        "format": "  {:%m-%d    %H:%M}",
+        //"format-alt": "  {:%Y-%m-%d, %a    %I:%M:%S %p}",
         "interval": 1
     },
 

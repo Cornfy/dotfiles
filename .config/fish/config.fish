@@ -5,7 +5,7 @@ if status is-interactive
     set -g fish_greeting ""
 
     # Setup common aliases
-    alias ls='ls -la --color=auto'
+    alias ls='ls -la --color=auto --group-directories-first'
     alias grep='grep --color=auto'
     alias cleanup='yay -Rsnc $(yay -Qqdt)'
 end

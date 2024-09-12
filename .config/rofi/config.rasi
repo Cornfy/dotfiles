@@ -1,0 +1,14 @@
+/* Rofi config file */
+
+configuration {
+    font: "Source Sans Pro 12";
+    show-icons: true;
+    display-window: "Window";
+    display-drun: "Search";
+}
+
+listview {
+    lines: 16;
+    columns: 2;
+    spacing: 5px;
+}
