@@ -358,6 +358,21 @@ Description="键盘 - 俄语 - 俄语（带鞑靼字母）"
 Language=ru
 Label="ru (rtu)"
 
+[keyboard-ru-diktor]
+Description="键盘 - 俄语 - 俄语（Diktor）"
+Language=ru
+Label=diktor
+
+[keyboard-ru-ruintl_ru]
+Description="键盘 - 俄语 - 俄语（国际，RU）"
+Language=ru
+Label="ru (ruintl_ru)"
+
+[keyboard-ru-ruintl_en]
+Description="键盘 - 俄语 - 俄语（国际，EN）"
+Language=en
+Label="en (ruintl_en)"
+
 [keyboard-br]
 Description="键盘 - 葡萄牙语（巴西）"
 Language=pt
@@ -899,22 +914,22 @@ Language=
 Label=brl
 
 [keyboard-brai-left_hand]
-Description="键盘 - 盲文 - 盲文（左手）"
+Description="键盘 - 盲文 - 盲文（单手，左手）"
 Language=
 Label="brai (left_hand)"
 
 [keyboard-brai-left_hand_invert]
-Description="键盘 - 盲文 - 盲文（左手，大拇指反转）"
+Description="键盘 - 盲文 - 盲文（单手，左手，大拇指反转）"
 Language=
 Label="brai (left_hand_invert)"
 
 [keyboard-brai-right_hand]
-Description="键盘 - 盲文 - 盲文（右手）"
+Description="键盘 - 盲文 - 盲文（单手，右手）"
 Language=
 Label="brai (right_hand)"
 
 [keyboard-brai-right_hand_invert]
-Description="键盘 - 盲文 - 盲文（右手，大拇指反转）"
+Description="键盘 - 盲文 - 盲文（单手，右手，大拇指反转）"
 Language=
 Label="brai (right_hand_invert)"
 
@@ -2064,12 +2079,12 @@ Language=en
 Label="us (dvorak-alt-intl)"
 
 [keyboard-us-dvorak-l]
-Description="键盘 - 英语（美国） - 英语（Dvorak，左手）"
+Description="键盘 - 英语（美国） - 英语（Dvorak，单手，左手）"
 Language=en
 Label="us (dvorak-l)"
 
 [keyboard-us-dvorak-r]
-Description="键盘 - 英语（美国） - 英语（Dvorak，右手）"
+Description="键盘 - 英语（美国） - 英语（Dvorak，单手，右手）"
 Language=en
 Label="us (dvorak-r)"
 
@@ -2714,12 +2729,12 @@ Language=fr
 Label="fr (dvorak)"
 
 [keyboard-fr-ergol]
-Description="键盘 - 法语 - French (Ergo‑L)"
+Description="键盘 - 法语 - 法语（Ergo-L）"
 Language=fr
 Label="fr (ergol)"
 
 [keyboard-fr-ergol_iso]
-Description="键盘 - 法语 - French (Ergo‑L, ISO variant)"
+Description="键盘 - 法语 - 法语（Ergo-L，ISO 变种）"
 Language=fr
 Label="fr (ergol_iso)"
 
@@ -3127,6 +3142,11 @@ Label="de (neo_qwertz)"
 Description="键盘 - 德语 - 德语（Neo，QWERTY）"
 Language=de
 Label="de (neo_qwerty)"
+
+[keyboard-de-noted]
+Description="键盘 - 德语 - 德语（Noted）"
+Language=de
+Label="de (noted)"
 
 [keyboard-de-ru-recom]
 Description="键盘 - 德语 - 俄语（德国，推荐）"

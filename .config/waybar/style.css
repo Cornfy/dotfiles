@@ -5,11 +5,16 @@
     margin-left: 5px;
    }
 
+#window {
+    color:#ffffff;
+}
+
 window#waybar {
     background:#2e3440;
 }
 
 #workspaces button {
+    background: transparent;
     padding: 2px 0px;
     border-bottom: 2px;
     color: #eceff4;
@@ -18,11 +23,7 @@ window#waybar {
     margin-top:2px;
 }
 
-#workspaces button.focused {
-    border-color: #81a1c1;
-}
-
-#custom-launcher, #tray, #idle_inhibitor, #temperature, #cpu, #memory, #network, #custom-network_traffic, #backlight, #pulseaudio, #clock, #battery, #custom-power{
+#custom-launcher, #tray, #idle_inhibitor, #temperature, #cpu, #memory, #network, #bluetooth, #custom-network_traffic, #backlight, #pulseaudio, #clock, #battery, #custom-power{
     padding: 0 3px;
     border-bottom: 2px;
     border-style: solid;
@@ -70,6 +71,10 @@ window#waybar {
 
 #network.disconnected {
     color: #bf616a;
+}
+
+#bluetooth {
+    color: #b46c6a;
 }
 
 #custom-network_traffic {

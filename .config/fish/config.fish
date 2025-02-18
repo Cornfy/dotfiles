@@ -5,14 +5,16 @@ if status is-interactive
     set -g fish_greeting ""
 
     # Setup common aliases
-    alias ls='ls -la --color=auto --group-directories-first'
+    alias ls='eza -la --color=auto --group-directories-first'
     alias grep='grep --color=auto'
     alias cleanup='yay -Rsnc $(yay -Qqdt)'
+    alias vim='nvim'
+    alias n='neofetch'
+    alias y='yazi'
 end
 
 # Set Environment
 source ~/.profile
 
 # Autostart WayfireWM when logging in
-start_wayfire
-
+start_hyprland
