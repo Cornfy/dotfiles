@@ -64,7 +64,7 @@ Yazi				# 终端文件管理器
 ├── jq				# 用于 JSON 预览
 ├── poppler			# PDF 预览
 ├── fd				# 用于文件搜索
-├── ripgrep				# 用于文件内容搜索
+├── ripgrep			# 用于文件内容搜索
 ├── fzf				# 用于快速文件子树导航
 ├── zoxide			# 用于历史目录导航
 ├── imagemagick			# 用于 SVG、字体、HEIC 和 JPEG XL 预览
@@ -74,7 +74,7 @@ Yazi				# 终端文件管理器
 wayland				# 显示管理器
 xorg-xwayland			# xorg 兼容
 ttf-noto-sans-mono-vf		# 英文等宽字体（动态字重）	
-ttf-noto-sans-mono-cjk-vf		# 中文等宽字体（动态字重）
+ttf-noto-sans-mono-cjk-vf	# 中文等宽字体（动态字重）
 noto-fonts-emoji		# emoji 表情字体
 fcitx5-im			# 输入法框架（包组）
 ├── fcitx5-chinese-addons	# 中文输入法
