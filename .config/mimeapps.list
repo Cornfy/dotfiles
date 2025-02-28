@@ -1,0 +1,8 @@
+[Default Applications]
+text/plain=VimGUI.desktop
+image/jpeg=Loupe.desktop
+image/png=Loupe.desktop
+image/gif=Loupe.desktop
+image/heic=Loupe.desktop
+
+[Added Associations]

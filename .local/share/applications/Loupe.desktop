@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Loupe
+Exec=loupe %f
+Icon=org.gnome.Loupe
+Type=Application

@@ -1,0 +1,15 @@
+[manager]
+show_hidden = true
+show_symlink = true
+linemode = "info"
+
+[preview]
+# wrap = "yes"
+
+[[opener.bulk-rename]]
+run   = 'hx "$@"'
+block = true
+
+[[open.prepend_rules]]
+name = "bulk-rename.txt"
+use  = "bulk-rename"

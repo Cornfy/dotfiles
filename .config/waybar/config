@@ -1,0 +1,128 @@
+{
+    "layer": "bottom",
+    "position": "bottom", // Waybar position (top|bottom|left|right)
+    "height": 30,
+    "modules-left": ["custom/launcher", "tray", "clock", "custom/network_traffic", "hyprland/workspaces"],
+    "modules-center": ["hyprland/window"],
+    "modules-right": ["temperature", "cpu", "memory", "network", "bluetooth", "backlight", "pulseaudio", "battery" , "custom/power"],
+
+ // Modules configuration
+
+    "custom/launcher": {
+    	"format":" ",
+    	"on-click": "rofi -show-icons -show drun",
+    	"tooltip": false,
+    },
+
+    "tray": {
+        "icon-size": 14,
+        "spacing": 5
+    },
+
+    "hyprland/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": true,
+        "on-click": "activate",
+        "persistent_workspaces": {
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": [],
+            "6": [],
+            "7": [],
+            "8": [],
+            "9": [],
+            "10": []
+        }
+    },
+
+    "hyprland/window": {
+        "format": "{title}",
+	"icon": false
+    },
+
+    "temperature": {
+        "critical-threshold": 80,
+        "format": " {temperatureC}°C"
+    },
+
+    "cpu": {
+        "format": "  {usage: >3}%",
+        "on-click": "alacritty -e htop"
+    },
+
+    "memory": {
+        "format": "  {: >3}%",
+        "on-click": "alacritty -e htop"
+    },
+
+    "network": {
+        "format": "⚠  Disabled",
+        "format-wifi": "   {essid}",
+        "format-ethernet": "   {ifname}: {ipaddr}/{cidr}",
+        "format-disconnected": "⚠  Disconnected",
+        "on-click": "alacritty -e nmtui"
+    },
+
+    "bluetooth": {
+        "format": " {status}",
+        "format-disabled": "  Off",  // 未启用时的图标
+        "format-connected": "  {device_alias}",  // 连接设备后的显示格式
+        "tooltip-format": "{num_connections}  connected",
+        "on-click": "blueberry"
+    },
+
+    "custom/network_traffic": {
+        "exec": "~/.config/waybar/scripts/network_traffic.sh",
+        "return-type": "json",
+        // "format-ethernet": "{icon} {ifname} ⇣{bandwidthDownBytes:>4} ⇡{bandwidthUpBytes:>4}",
+    },
+
+    "backlight": {
+        "format": "{icon} {percent: >3}%",
+        "format-icons": ["  ", "  "],
+        "on-scroll-down": "brightnessctl -c backlight set 5%-",
+        "on-scroll-up": "brightnessctl -c backlight set +5%"
+    },
+
+    "pulseaudio": {
+        "scroll-step": 5,
+        "format": "{icon} {volume: >3}%",
+        "format-bluetooth": "{icon} {volume: >3}%",
+        "format-muted":" muted",
+        "format-icons": {
+            "headphones": " ",
+            "handsfree": " ",
+            "headset": " ",
+            "phone": " ",
+            "portable": " ",
+            "car": " ",
+            "default": ["  ", "  "]
+        },
+        "on-click": "pavucontrol"
+    },
+
+    "clock": {
+        "format": "  {:%m-%d    %H:%M}",
+        //"format-alt": "  {:%Y-%m-%d, %a    %I:%M:%S %p}",
+        "interval": 1
+    },
+
+    "battery": {
+        "states": {
+            "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity: >3}%",
+        "format-icons": ["  ", "  ", "  ", "  ", "  "]
+    },
+
+    "custom/power": {
+      	"format":"⏻ ",
+       	"on-click": "wlogout",
+      	"tooltip": false,
+    },
+
+}
