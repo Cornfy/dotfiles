@@ -93,6 +93,7 @@ hyprland	            		# 窗口管理器
 │	├── pipewire-pulse      	# 音频管理
 │	├── pavucontrol	        	# 音量控制
 │	└── wlogout	            	# 退出登陆
+├── hyprpolkitagent             # 身份验证守护进程
 ├── swaybg	            		# 壁纸
 ├── swaylock        			# 锁屏
 ├── mako	            		# 通知显示工具

@@ -6,6 +6,7 @@ if status is-interactive
 
     # Setup common aliases
     alias ls='eza -la --color=auto --group-directories-first'
+    alias lsblk='lsblk -o NAME,LABEL,TYPE,SIZE,MOUNTPOINTS,UUID'
     alias grep='grep --color=auto'
     alias cleanup='yay -Rsnc $(yay -Qqdt)'
     alias vim='nvim'
@@ -17,4 +18,4 @@ end
 source ~/.profile
 
 # Autostart WayfireWM when logging in
-start_hyprland
+# start_hyprland
