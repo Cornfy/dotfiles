@@ -105,8 +105,9 @@
 
     "clock": {
         "format": "  {:%m-%d    %H:%M}",
-        //"format-alt": "  {:%Y-%m-%d, %a    %I:%M:%S %p}",
-        "interval": 1
+        "format-alt": "  {:%Y-%m-%d, %a    %I:%M:%S %p}",
+        "interval": 1,
+      	"tooltip": false
     },
 
     "battery": {

@@ -18,11 +18,12 @@ export XMODIFIERS=@im=fcitx
 export SDL_IM_MODULE=fcitx
 
 # GDK
-#export GDK_BACKEND=x11
+# export GDK_BACKEND=x11
 
 # QT
 export QT_QPA_PLATFORM="wayland;xcb"
-export QT_QPA_PLATFORMTHEME=qt5ct # install [qt5ct] package
+export QT_QPA_PLATFORMTHEME=qt5ct
+	# install [qt5ct] package
 
 # Clutter
 export CLUTTER_BACKEND=wayland
@@ -38,6 +39,3 @@ export SDL_VIDEODRIVER="wayland,x11"
 
 # Winit
 export WINIT_UNIX_BACKEND=x11
-
-# XDG
-export XDG_CURRENT_DESKTOP=wayfire

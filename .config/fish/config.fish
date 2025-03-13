@@ -12,6 +12,7 @@ if status is-interactive
     alias vim='nvim'
     alias n='neofetch'
     alias y='yazi'
+    alias c='clear'
 end
 
 # Set Environment

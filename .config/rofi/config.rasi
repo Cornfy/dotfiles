@@ -1,7 +1,7 @@
 /* Rofi config file */
 
 configuration {
-    font: "Noto Sans 16";
+    font: "16";
     show-icons: true;
     display-window: "Window";
     display-drun: "Search";
