@@ -78,8 +78,9 @@ otf-noto-sans-mono-cjk-vf   	# 中文等宽字体（动态字重）
 noto-fonts-emoji        		# emoji 表情字体
 fcitx5-im	            		# 输入法框架（包组）
 ├── fcitx5-chinese-addons       # 中文输入法
-└── fcitx5-pinyin-moegirl   	# 萌娘百科词库
-xdg-desktop-portal	        	# D-Bus 接口(桌面集成功能：文件选择、屏幕共享、通知系统、设置管理、URI 处理等）
+├── fcitx5-pinyin-moegirl   	# 萌娘百科词库
+└── kwindowsystem               # 手动补充依赖性（修复一个 fcitx5-configtool 无法启动的问题）
+xdg-desktop-portal	        	# D-Bus 接口（桌面集成功能：文件选择、屏幕共享、通知系统、设置管理、URI 处理等）
 └── xdg-desktop-portal-wlr  	# D-Bus 接口的 wlroots 桌面（如 Hyprland、Wayfire 等）后端实现
 hyprland	            		# 窗口管理器
 ├── alacritty	        		# 终端模拟器
