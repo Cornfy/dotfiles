@@ -95,6 +95,7 @@ hyprland	            		# 窗口管理器
 │	├── pavucontrol	        	# 音量控制
 │	└── wlogout	            	# 退出登陆
 ├── hyprpolkitagent             # 身份验证守护进程
+├── libnotify                   # 提供通知发送
 ├── swaybg	            		# 壁纸
 ├── swaylock        			# 锁屏
 ├── mako	            		# 通知显示工具
@@ -110,7 +111,7 @@ hyprland	            		# 窗口管理器
 
 # 功能补强
 eza		                		# 一个高级版的 ls
-android-sdk-platform-tools  	# Android adb 工具（adb、fastboot）
+android-tools                 	# Android adb 工具（adb、fastboot）
 ntfs-3g	            			# 提供挂载 Windows NTFS 分区的能力
 gvfs-mtp            			# 提供自动挂载 U 盘、MTP 设备的能力
 ```
