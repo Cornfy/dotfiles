@@ -1,8 +1,6 @@
 [Hotkey]
 # 反复按切换键时进行轮换
 EnumerateWithTriggerKeys=True
-# 向前切换输入法
-EnumerateForwardKeys=
 # 向后切换输入法
 EnumerateBackwardKeys=
 # 轮换输入法时跳过第一个输入法
@@ -17,6 +15,9 @@ ModifierOnlyKeyTimeout=250
 
 [Hotkey/AltTriggerKeys]
 0=Shift_L
+
+[Hotkey/EnumerateForwardKeys]
+0=Control+Shift+Shift_L
 
 [Hotkey/EnumerateGroupForwardKeys]
 0=Super+space

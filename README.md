@@ -86,7 +86,7 @@ hyprland	            		# 窗口管理器
 ├── alacritty	        		# 终端模拟器
 ├── waybar		            	# 状态栏
 │	├── rofi-wayland        	# 程序启动器
-│	├── htop            		# 查看运行的程序
+│	├── btop            		# 查看运行的程序
 │	├── networkmanager      	# 网络管理器
 │	├── blueberry       		# 蓝牙管理器
 │	├── brightnessctl       	# 亮度控制

@@ -10,7 +10,7 @@ if status is-interactive
     alias grep='grep --color=auto'
     alias cleanup='yay -Rsnc $(yay -Qqdt)'
     alias vim='nvim'
-    alias n='neofetch'
+    alias f='fastfetch'
     alias y='yazi'
     alias c='clear'
 end

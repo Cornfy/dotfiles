@@ -90,6 +90,7 @@ cfdisk /dev/sda
 
 
 # 格式化分区（以 /dev/sda2 作为archlinux根目录 / 为例）
+mkfs.fat -F32 /dev/sda1
 mkfs.btrfs -f -L "archlinux" /dev/sda2		# -L 是参数设置该卷的标签
 
 

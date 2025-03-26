@@ -5,9 +5,12 @@ image/png=org.gnome.Loupe.desktop
 image/gif=org.gnome.Loupe.desktop
 image/heic=org.gnome.Loupe.desktop
 image/webp=org.gnome.Loupe.desktop
+application/pdf=wps-office-pdf.desktop
+x-scheme-handler/bilipc=bilibili.desktop
 
 [Added Associations]
 application/x-shellscript=VimGUI.desktop;
 text/html=google-chrome.desktop
 x-scheme-handler/http=google-chrome.desktop
 x-scheme-handler/https=google-chrome.desktop
+application/pdf=wps-office-pdf.desktop;
