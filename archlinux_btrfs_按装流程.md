@@ -2,16 +2,20 @@
 
 ```txt
 硬盘1 /dev/sda
----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+|    /dev/sda1   |                              /dev/sda2                               |
+-----------------------------------------------------------------------------------------
 |   EFI (Fat32)  |            archlinux (btrfs，包含 @、@home、@var_log 等子卷)          |
----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 ```
 
 ```txt
-硬盘2 /dev/sdb
-----------------------------------------------------------------
-|   EFI (Fat32)  |     win11 C盘 (NTFS)     |     D盘 (NTFS)    |
-----------------------------------------------------------------
+硬盘2 /dev/sdb （假设 Windows 已经装好）
+-------------------------------------------------------------------
+|    /dev/sda1   |          /dev/sdb2         |     /dev/sdb3     |
+-------------------------------------------------------------------
+|   EFI (Fat32)  |     Windows C盘 (NTFS)     |     D盘 (NTFS)    |
+-------------------------------------------------------------------
 ```
 
 ```txt
@@ -90,7 +94,7 @@ cfdisk /dev/sda
 
 
 # 格式化分区（以 /dev/sda2 作为archlinux根目录 / 为例）
-mkfs.fat -F32 /dev/sda1
+mkfs.fat -F32 /dev/sda1					# EFI 分区应该是 Fat32 文化系统
 mkfs.btrfs -f -L "archlinux" /dev/sda2		# -L 是参数设置该卷的标签
 
 
@@ -141,11 +145,17 @@ btrfs filesystem mkswapfile --size 8G --uuid clear /mnt/swap/swapfile
 	# （我们挂载 @swap 子卷时已经禁用了，这里用 btrfs 内部命令创建 swapfile 也会自动禁用）
 	# 正常创建 swap 分区是使用 mkswap 命令
 
+# 启用 swapfile
+swapon /mnt/mnt/swapfile
+
 
 # （可选）挂载 Windows 分区
 mkdir -p /mnt/mnt/{Windows_C,Windows_D}
-mount /dev/sdb2 /mnt/mnt/Windows_C
-mount /dev/sdb3 /mnt/mnt/Windows_D
+mount -t ntfs3 /dev/sdb2 /mnt/mnt/Windows_C
+mount -t ntfs3 /dev/sdb3 /mnt/mnt/Windows_D
+	# 在较新的 Linux 内核中，已经内置了 ntfs3 来支持 NTFS 文件系统
+	# Arch ISO 中保留了 ntfs-3g 包作为兜底
+	# 由于 ntfs3 的性能更好，我们显示指定使用 ntfs3 来挂载，避免使用默认的 ntfs-3g
 ```
 
 
@@ -167,15 +177,19 @@ mount /dev/sdb3 /mnt/mnt/Windows_D
     - `networkmanager` 提供了 nmtui 命令（一个终端下的 “图形化” 联网工具）
   - `vim` —— 文本编辑器
     - 你也可以安装 `nano` 、 `micro` 等文本编辑器
-  - `sudo` 是提权工具
-  - `fish` 是一个默认自带输入预测的 shell ，你也可以安装其他 shell
+  - `sudo`—— 提权工具
+  - `fish` 一个默认自带输入预测的 shell ，你也可以安装其他 shell
     - Arch Linux 的默认 shell 是 `bash`
     - Arch ISO 中的 shell 是 `zsh`
-  - `ntfs-3g` 提供挂载 Windows 的 NTFS 分区的能力
+  - `ntfs-3g` —— 提供挂载 Windows 的 NTFS 分区的能力
+    - 在较新的 Linux 内核中内置了 ntfs3 ，且性能更好，因此可以不装 ntfs-3g
+    - 但若安装 archinstall ，则 ntfs-3g 会作为 archinstall 的依赖被安装
 
 ```shell
-# 更新镜像源
-pacman -Sy archlinux-keyring pacman-mirrorlist
+# 仅更新 Arch ISO 中的 archlinux 密钥环
+pacman -Sy archlinux-keyring
+
+# 更新 Arch ISO 中的软件源（切换为国内镜像源）
 reflector --country China --protocol https --save /etc/pacman.d/mirrorlist
     # 可用 vim 查看
     vim /etc/pacman.d/mirrorlist
@@ -186,8 +200,9 @@ reflector --country China --protocol https --save /etc/pacman.d/mirrorlist
 
 
 # 安装 archlinux 系统
-pacstrap -K /mnt base base-devel linux linux-firmware intel-ucode archinstall grub efibootmgr os-prober dhcpcd iwd networkmanager vim sudo fish ntfs-3g
+pacstrap -K /mnt base base-devel linux linux-firmware intel-ucode archinstall grub efibootmgr os-prober dhcpcd iwd networkmanager vim sudo fish
     # 使用 pacstrap 命令，向挂载在 /mnt 的 archlinux 的根分区 /dev/sda2 (的 @ 子卷) 中装入软件包
+    # pacstrap 会自动将 Arch ISO 中的软件源（ /etc/pacman.d/mirrorlist ）复制到新安装的 archlinux 中
 
 
 # 使用 archinstall 中自带的工具将 Arch ISO 中的挂载信息，
@@ -211,7 +226,7 @@ vim /mnt/etc/fstab
 
   - fstab 文件的示例
     - efi_windows 设置了 ro 参数（只读），防止意外修改 Windows 引导；
-    - Windows_C 、Windows_D 设置了 nofail 参数，即使挂载失败也不影响 Arch Linux 启动；
+    - Windows_C 、Windows_D 使用 ntfs3 来挂载，并设置了 nofail 参数，即使挂载失败也不影响 Arch Linux 启动；
     - 除了 @ 、@home 外，使用 nodatacow,compress=no 参数，禁用压缩话写时复制； 
 
 ```txt
@@ -220,34 +235,34 @@ vim /mnt/etc/fstab
 
 # <file system> <dir> <type> <options> <dump> <pass>
 # /dev/sda2 LABEL=archlinux_rootfs
-UUID=d71ff479-f8c4-4bd1-9c4b-a5ff0c07614a	/         	btrfs     	rw,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@	0 0
+UUID=xxxx-xxxx	/         	btrfs     	rw,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@	0 0
 
 # /dev/sda1 LABEL=efi
-UUID=CEE3-84FE      	/boot/efi 	vfat      	rw,relatime,fmask=0077,dmask=0077,noauto,nofail,x-systemd-automount	0 0
+UUID=xxxx-xxxx      	/boot/efi 	vfat      	rw,relatime,fmask=0077,dmask=0077,noauto,nofail,x-systemd-automount	0 0
 
 # /dev/nvme0n1p1 LABEL=efi_windows
-UUID=6F85-B74E      	/boot/efi_windows	vfat      	ro,relatime,fmask=0077,dmask=0077,noauto,nofail,x-systemd-automount	0 0
+UUID=xxxx-xxxx      	/boot/efi_windows	vfat      	ro,relatime,fmask=0077,dmask=0077,noauto,nofail,x-systemd-automount	0 0
 
 # /dev/sda2 LABEL=home
-UUID=d71ff479-f8c4-4bd1-9c4b-a5ff0c07614a	/home     	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@home	0 0
+UUID=xxxx-xxxx	/home     	btrfs     	rw,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@home	0 0
 
 # /dev/sda2 LABEL=var_log
-UUID=d71ff479-f8c4-4bd1-9c4b-a5ff0c07614a	/var/log  	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_log	0 0
+UUID=xxxx-xxxx	/var/log  	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_log	0 0
 
 # /dev/sda2 LABEL=var_cache
-UUID=d71ff479-f8c4-4bd1-9c4b-a5ff0c07614a	/var/cache	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_cache	0 0
+UUID=xxxx-xxxx	/var/cache	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_cache	0 0
 
 # /dev/sda2 LABEL=var_lib_docker
-UUID=d71ff479-f8c4-4bd1-9c4b-a5ff0c07614a	/var/lib/docker	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_lib_docker	0 0
+UUID=xxxx-xxxx	/var/lib/docker	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_lib_docker	0 0
 
-# UUID=5A0A2394DEE85411 LABEL=Windows
-/dev/nvme0n1p2      	/mnt/Windows_C	ntfs      	rw,nosuid,nodev,fmask=0022,dmask=0022,nofail,uid=1000,gid=1000,allow_other,blksize=4096	0 0
+# /dev/nvme0n1p2 LABEL=windows_c
+UUID=xxxx-xxxx      	/mnt/Windows_C	ntfs3      	rw,relatime,fmask=0022,dmask=0022,nofail,uid=1000,gid=1000,iocharset=utf8	0 0
 
-# UUID=BB4329F6136D7AB7 LABEL=Data
-/dev/nvme0n1p3      	/mnt/Windows_D	ntfs      	rw,nosuid,nodev,fmask=0022,dmask=0022,nofail,uid=1000,gid=1000,allow_other,blksize=4096	0 0
+# /dev/nvme0n1p3 LABEL=windows_d
+UUID=xxxx-xxxx      	/mnt/Windows_D	ntfs3      	rw,relatime,fmask=0022,dmask=0022,nofail,uid=1000,gid=1000,iocharset=utf8	0 0
 
 # /dev/sda2 LABEL=swap
-UUID=d71ff479-f8c4-4bd1-9c4b-a5ff0c07614a	/swap     	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@swap	0 0
+UUID=xxxx-xxxx	/swap     	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@swap	0 0
 
 /swap/swapfile      	none      	swap      	defaults  	0 0
 
@@ -266,10 +281,8 @@ arch-chroot /mnt
 # 设置时期
 ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
-# 同步时间
-timedatectl
-    # 之后正常启动可使用NTP同步时间，以确保时间准确
-    timedatectl set-ntp true		# 非root帐号需要sudo
+# 用 NTP 同步时间
+timedatectl set-ntp true
 
 # 生成 /etc/adjtime
 hwclock --systohc
@@ -306,16 +319,17 @@ echo "archlinux" >> /etc/hostname
 
 
 - 设置 host （影响域名解析）
-  - 设置 `localhost`（域名） 指向 `127.0.0.1`（IPv4 地址）
-  - 设置 `localhost`（域名） 指向 `::1`（IPv6 地址）
 
 ```shell
 # 设置网络配置
 vim /etc/hosts
 ```
 
+- 添加如下内容（可用tab对齐）
+  - `127.0.0.1` 为 IPv4 地址
+  - `::1` 为 IPv6 地址
+
 ```txt
-# 添加如下内容（可用tab对齐）
 127.0.0.1	localhost
 ::1			localhost
 127.0.1.1	archlinux.localdomain	archlinux
@@ -339,6 +353,11 @@ grub-mkconfig -o /boot/grub/grub.cfg
 # 如需多系统引导，请修改 /etc/default/grub 文件，并重新生成grub配置
 vim /etc/default/grub
     # 取消 GRUB_DISABLE_OS_PROBER=FALSE 的注释
+
+    # （可选）对于高分辨率屏幕，可调整 GRUB 的屏幕分辨率来方法界面
+    	# 将 GRUB_GFXMODE=auto 行中的 auto 改成 1024x768 
+        # 注意，是英文字母 x 而不是 “乘以” 符号
+
     # 保存退出
 grub-mkconfig -o /boot/grub/grub.cfg
 
@@ -436,13 +455,47 @@ sudo systemctl enable --now gdm
 #### 一些骚操作 ####
 
 ```shell
-# 修改 pacman 配置，启用颜色、多线程下载和吃豆人
+# 编辑 pacman 配置文件
 sudo vim /etc/pacman.conf
-    # 按 /Color 搜索，回车确定
-    # 取消 Color 的注释
-    # 取消 ParallelDownloads = 5 的注释
-    # 按 i 编辑，在下方空行写入 ILoveCandy
+	# 启用颜色：
+    # 按 /Color 搜索，方向键导航到行首，（按 x 删除 # 号）取消 Color 行的注释
+
+    # 启用多线程下载：
+    # 方向键导航到 ParallelDownloads = 5 行的行首，（按 x 删除 # 号）取消注释
+
+    # 启用吃豆人小彩蛋：
+    # 按 i 进入编辑
+    # 在 # Misc options 板块中增加一个新的空行，在空行中写入 ILoveCandy
     # 按 :wq 保存退出
+
+
+
+# 启用 archlinuxcn 软件源
+# ⚠️ 注意：这不是官方软件源!!!
+
+# 编辑 pacman 配置文件
+sudo vim /etc/pacman.conf
+
+	# 按 shift + g 导航到尾行
+	# 按 o 增加空行并编辑（可回车再增加一个空行）
+	# 添加以下内容并保存退出：
+	[archlinuxcn]
+	Include = /etc/pacman.d/mirrorlist-archlinuxcn
+
+# 然后编辑 /etc/pacman.d/mirrorlist-archlinuxcn 文件
+sudo vim /etc/pacman.d/mirrorlist-archlinuxcn
+
+	# 添加你想使用的 CN 源，例如：
+	Server = https://mirrors.ustc.edu.cn/archlinuxcn/$arch
+	Server = https://mirrors.tuna.tsinghua.edu.cn/archlinuxcn/$arch
+	Server = https://mirrors.aliyun.com/archlinuxcn/$arch
+	# 更多 CN 源码请参考网址：https://github.com/archlinuxcn/mirrorlist-repo
+	# 保存退出
+
+# 更新 archlinuxcn 密钥环
+sudo pacman -S archlinuxcn-keyring
+
+
 
 # 由于之前已经将 Windows 的 C盘 挂载到 /mnt/mnt/Windows_C ，因此可以直接用 Windows 字体
 # 将 Windows 字体复制到 archlinux 中
