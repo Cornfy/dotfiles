@@ -13,7 +13,7 @@ else
 	wf-recorder -f "$output" \
 		--codec libx265 \
 		--pixel-format yuv420p \
-		--codec-param b=1065k \
+		--codec-param b=8000k \
 		--audio \
 		--audio-codec aac \
 		--sample-rate 48000 \

@@ -6,3 +6,14 @@ desc = "Enter the child directory, or open the file"
 [[manager.prepend_keymap]]
 on  = "y"
 run = [ 'shell -- for path in "$@"; do echo "file://$path"; done | wl-copy -t text/uri-list', "yank" ]
+desc = "Copy selected files to the system clipboard while yanking (for wayland)"
+
+[[manager.prepend_keymap]]
+on   = "!"
+run  = 'shell "$SHELL" --block'
+desc = "Open shell here"
+
+[[manager.prepend_keymap]]
+on   = "O"
+run  = "plugin open-with-cmd"
+desc = "Open with command"
