@@ -5,7 +5,8 @@ if status is-interactive
     set -g fish_greeting ""
 
     # Setup common aliases
-    alias ls='eza -la --color=auto --group-directories-first'
+    alias ls='eza -la --color=auto --group-directories-first --group'
+    alias cat='bat'
     alias lsblk='lsblk -o NAME,LABEL,TYPE,SIZE,MOUNTPOINTS,UUID'
     alias grep='grep --color=auto'
     alias cleanup='yay -Rsnc $(yay -Qqdt)'
@@ -15,8 +16,5 @@ if status is-interactive
     alias c='clear'
 end
 
-# Set Environment
-source ~/.profile
-
-# Autostart WayfireWM when logging in
+# Autostart WayfireWM when logging in (source ~/.profile)
 # start_hyprland
