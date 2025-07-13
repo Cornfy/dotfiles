@@ -1,0 +1,6 @@
+set shell sh
+set hidden	true
+
+map a :push %mkdir<space>
+map D delete
+map o $vim "$f"

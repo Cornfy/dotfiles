@@ -16,5 +16,9 @@ if status is-interactive
     alias c='clear'
 end
 
+# Add user bin directory to PATH
+set PATH $PATH "$HOME/.local/bin"
+
 # Autostart WayfireWM when logging in (source ~/.profile)
 # start_hyprland
+
