@@ -11,6 +11,7 @@ if status is-interactive
     alias grep='grep --color=auto'
     alias cleanup='yay -Rsnc $(yay -Qqdt)'
     alias vim='nvim'
+    alias ssh='env TERM=xterm-256color ssh'
     alias f='fastfetch'
     alias y='yazi'
     alias c='clear'
