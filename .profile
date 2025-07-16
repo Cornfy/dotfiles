@@ -6,7 +6,7 @@ export LC_ALL=zh_CN.UTF-8
 export EDITOR=nvim
   
 # Term
-export TERM=alacritty
+export TERM=foot
 
 # Go Proxy
 export GOPROXY=https://goproxy.cn 
