@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# 检查参数是否存在
+if [ $# -eq 0 ]; then
+    echo "Error: No target directory specified."
+    echo "Usage: $0 <target_directory>"
+    exit 1
+fi
+
+target="$1"
+
+# 检查目标是否存在
+if [ ! -e "$target" ]; then
+    echo "Error: Target '$target' does not exist."
+    exit 1
+fi
+
+# 显示操作详情
+echo "You are about to:"
+echo "1. Set all DIRECTORY permissions to 755 (rwxr-xr-x)"
+echo "2. Set all FILE permissions to 644 (rw-r--r--)"
+echo -e "\nTarget path: $target"
+
+# 严格确认机制
+read -p $'\nType "yes" to confirm: ' confirm
+if [[ "$confirm" != "yes" ]]; then
+    echo "Operation cancelled."
+    exit 0
+fi
+
+# 执行权限修改
+echo -e "\nModifying permissions..."
+find "$target" -type d -exec chmod 755 {} +
+find "$target" -type f -exec chmod 644 {} +
+echo "Permissions updated successfully."

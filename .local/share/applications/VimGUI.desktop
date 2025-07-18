@@ -1,5 +1,0 @@
-[Desktop Entry]
-Name=VimGUI
-Exec=env WAYLAND_DISPLAY="" alacritty -e nvim %f
-Icon=nvim
-Type=Application

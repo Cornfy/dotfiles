@@ -1,0 +1,29 @@
+#!/bin/bash
+
+usage() {
+  echo "Usage: $0 [on|off]"
+  echo "  on: Allow the system to sleep normally"
+  echo "  off: Prevent the system from sleeping"
+  exit 1
+}
+
+if [ $# -ne 1 ]; then
+  usage
+fi
+
+case "$1" in
+  on)
+    echo "Allowing the system to sleep normally."
+    systemctl unmask sleep.target suspend.target hibernate.target hybrid-sleep.target
+    systemctl enable sleep.target suspend.target hibernate.target hybrid-sleep.target
+    ;;
+  off)
+    echo "Preventing the system from sleeping."
+    systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+    ;;
+  *)
+    usage
+    ;;
+esac
+
+exit 0
