@@ -17,9 +17,10 @@ if status is-interactive
     alias c='clear'
 end
 
-# Add user bin directory to PATH
-set PATH $PATH "$HOME/.local/bin"
+# Add user bin directories to PATH
+fish_add_path "$HOME/.local/bin"
+fish_add_path "$HOME/bin"
 
-# Autostart WayfireWM when logging in (source ~/.profile)
-# start_hyprland
+# GO Proxy Setting
+set -gx GOPROXY "https://goproxy.cn"
 
