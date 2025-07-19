@@ -2,8 +2,14 @@
 - 该项目用于备份我的 Arch Linux 的常用配置文件。
 - 主要用于 Wayland 环境。
 
-#### .profile 文件
-- 该文件为环境变量，可将该文件放在 `$HOME` 目录下。
+#### ~~.profile 文件~~
+- ~~该文件为环境变量，可将该文件放在 `$HOME` 目录下。~~
+- 环境变量改为：
+  - shell 中的环境变量统一放入 fish 配置文件中：`~/.config/fish/config.fish`
+  - 图形界面所需的额外环境变量放入对应 DE/WM 的配置文件中。例如：
+    - Hyprland 的，放入： `~/.config/hypr/conf/environment.conf`
+    - Gnome 的，放入：`~/.confi/environment.d/*.conf`
+
 
 #### .config 文件夹
 - 此文件夹对应 `$HOME/.config` 文件夹，内含各软件的配置文件。
@@ -24,7 +30,7 @@ sudo pacman -D --asdeps <package_name>
 
 #### 个人的 hyprland 配置所需的依赖包
 
-```txt
+```mtxt
 # 基础包
 base		            		# Arch 基础包组
 base-devel	            		# Arch 开发工具包组
@@ -93,7 +99,7 @@ hyprland	            		# 窗口管理器
 │	├── pipewire        		# 音视频处理框架
 │	├── pipewire-pulse      	# 音频管理
 │	├── pavucontrol	        	# 音量控制
-│	└── wlogout	            	# 退出登陆
+│	└── wlogout	            	# 退出登陆 (不再需要，用 rofi 自定义菜单替代)
 ├── hyprpolkitagent             # 身份验证守护进程
 ├── libnotify                   # 提供通知发送
 ├── swaybg	            		# 壁纸
