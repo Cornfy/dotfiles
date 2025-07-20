@@ -23,7 +23,20 @@ window#waybar {
     margin-top:2px;
 }
 
-#custom-launcher, #tray, #idle_inhibitor, #temperature, #cpu, #memory, #network, #bluetooth, #custom-network_traffic, #backlight, #pulseaudio, #clock, #battery, #custom-power{
+#custom-launcher,
+#tray,
+#idle_inhibitor,
+#temperature,
+#cpu,
+#memory,
+#network,
+#bluetooth,
+#custom-network_traffic,
+#backlight,
+#pulseaudio,
+#clock,
+#battery,
+#custom-power{
     padding: 0 3px;
     border-bottom: 2px;
     border-style: solid;
@@ -31,18 +44,27 @@ window#waybar {
  
 /* Module styles */
 
-#custom-launcher,#custom-power,#tray{
+#custom-launcher,
+#custom-power,
+#custom-clipboard,
+#tray{
     color: #ffffff;
     border-style: hidden;
     margin-top:2px;
 }
 
+/*
 #tray{
     background: #ffd3e0;
 }
+*/
+
+#custom-clipboard {
+    color: #d08770;
+}
 
 #idle_inhibitor {
-   color: #ebcb8b;
+    color: #ebcb8b;
 }
 
 #temperature {

@@ -92,6 +92,7 @@ hyprland	            		# 窗口管理器
 ├── alacritty / foot       		# 终端模拟器
 ├── waybar		            	# 状态栏
 │	├── rofi-wayland        	# 程序启动器
+│	├── cliphist            	# 剪切板管理器
 │	├── btop            		# 查看运行的程序
 │	├── networkmanager      	# 网络管理器
 │	├── blueberry       		# 蓝牙管理器

@@ -4,7 +4,7 @@
     "height": 30,
     "modules-left": ["custom/launcher", "tray", "clock", "custom/network_traffic", "hyprland/workspaces"],
     "modules-center": ["hyprland/window"],
-    "modules-right": ["temperature", "cpu", "memory", "network", "bluetooth", "backlight", "pulseaudio", "battery" , "custom/power"],
+    "modules-right": ["custom/clipboard", "temperature", "cpu", "memory", "network", "bluetooth", "backlight", "pulseaudio", "battery" , "custom/power"],
 
  // Modules configuration
 
@@ -40,6 +40,14 @@
     "hyprland/window": {
         "format": "{title}",
 	"icon": false
+    },
+
+    "custom/clipboard": {
+        "format": "󰅇",
+        "tooltip": true,
+        "tooltip-format": "Clipboard History",
+        "on-click": "~/.config/rofi/scripts/clipboard-manager.sh",
+        // "on-click-right": "cliphist wipe" // 右键点击清空所有历史
     },
 
     "temperature": {
