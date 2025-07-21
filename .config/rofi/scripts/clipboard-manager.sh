@@ -29,7 +29,7 @@ CUSTOM_BINDINGS="-kb-custom-1 ${KEY_DELETE} -kb-custom-2 ${KEY_CLEAR}"
 # 主循环
 while true; do
     # 启动 Rofi
-    SELECTION=$(cliphist list | rofi -dmenu -i -p "Clipboard: " \
+    SELECTION=$(cliphist list | cut -f 2- | rofi -dmenu -i -p "Clipboard: " \
         -theme ~/.config/rofi/themes/clipboard-manager.rasi \
         -mesg "Enter: Paste | ${KEY_DELETE}: Remove | ${KEY_CLEAR}: Clear All" \
         ${CUSTOM_BINDINGS})
