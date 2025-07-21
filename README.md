@@ -86,7 +86,8 @@ xorg-xwayland       			# xorg 兼容
 ├── ttf-noto-sans-mono-vf       # 等宽英文字体（动态字重）	
 ├── ttf-noto-sans-mono-cjk-vf   # 等宽中日韩字体（动态字重）
 ├── noto-fonts-emoji            # emoji 表情字体
-└── nerd-fonts-noto-sans-mono	# 带图标的等宽字体
+├── ttf-nerd-fonts-symbols          # emoji 表情字体（Yazi 的依赖，应当无需单独安装）
+└── ttf-nerd-fonts-symbols-common   # 纯 Nerd 图标字体（Yazi 的依赖，应当无需单独安装）
 
 fcitx5-im	            		# 输入法框架（包组）
 ├── fcitx5-chinese-addons       # 中文输入法
@@ -99,7 +100,7 @@ hyprland	            		# 窗口管理器
 ├── foot                        # 终端模拟器
 ├── waybar		            	# 状态栏
 │	├── rofi-wayland        	# 程序启动器
-│	├── cliphist            	# 剪切板管理器
+│	├── cliphist            	# 剪切板管理器（前面应当安装过 wl-clipboard）
 │	├── btop            		# 查看运行的程序
 │	├── networkmanager      	# 网络管理器
 │	├── blueberry       		# 蓝牙管理器
