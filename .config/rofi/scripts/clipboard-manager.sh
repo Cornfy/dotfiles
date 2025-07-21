@@ -6,26 +6,24 @@
 #
 # This version gives up on the problematic 'Delete' key and uses
 # non-conflicting 'Alt' keybindings for robustness.
-#
-# This script depends on `wl-clipboard` and `cliphist` packages.
-# 该脚本依赖 `wl-clipboard` 和 `cliphist` 包。
 
 # -----------------------------------------------------
 # Configuration Area
 # -----------------------------------------------------
-# 使用不会与 Rofi 默认功能冲突的 Alt 组合键。
+# 我们现在使用不会与 Rofi 默认功能冲突的 Alt 组合键。
 
 # 删除单个条目的按键
-KEY_DELETE="Alt+d"	# 'd' for 'delete'
+KEY_DELETE="Alt+d"  # 'd' for 'delete'
 
 # 清空所有历史的按键
-KEY_CLEAR="Alt+c"	# 'c' for 'clear'
+KEY_CLEAR="Alt+c"   # 'c' for 'clear'
 
 # -----------------------------------------------------
 # Engine - Do not edit below
 # -----------------------------------------------------
 
 # 定义我们自己的自定义按键绑定
+# 因为我们使用了无冲突的键位，所以不再需要任何“解绑”操作。
 CUSTOM_BINDINGS="-kb-custom-1 ${KEY_DELETE} -kb-custom-2 ${KEY_CLEAR}"
 
 # 主循环

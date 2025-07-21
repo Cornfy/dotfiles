@@ -11,7 +11,7 @@
     fg2:    #969696;
     fg3:    #3D3D3D;
 
-    font:   "Roboto 14";
+    font:   "monospace 14";
 
     background-color:   transparent;
     text-color:         @fg0;
@@ -48,11 +48,6 @@ inputbar {
 
 prompt {
     text-color: @fg2;
-}
-
-entry {
-    placeholder:        "Search";
-    placeholder-color:  @fg3;
 }
 
 message {

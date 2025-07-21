@@ -4,15 +4,16 @@
     bg0:    #212121F2;
     bg3:    #EC407AF2;
     fg0:    #E6E6E6;
-    font:   "Roboto Nerd Font 12";
+
+    font:   "monospace 12";
 
     background-color:   transparent;
     text-color:         @fg0;
 }
 
 window {
-    width:      600px;
-    height:     80%;
+    width:      50%;
+    height:     75%;
     border:     2px;
     border-radius:  24px;
     border-color:   @bg3;

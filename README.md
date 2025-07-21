@@ -63,9 +63,7 @@ yay		                		# aur 助手
 # 文件管理
 Yazi	            			# 终端文件管理器
 ├── file	            		# 用于文件类型检测
-├── nerd-fonts-noto-sans-mono	# 图标字体
 ├── ffmpeg			            # 用于视频缩略图
-├── ueberzugpp	        		# 图片预览（若以 alacritty 默认终端，则需安装）
 ├── 7zip	            		# 用于档案提取和预览
 ├── jq	            			# 用于 JSON 预览
 ├── poppler			            # PDF 预览
@@ -79,17 +77,26 @@ Yazi	            			# 终端文件管理器
 # 图形界面
 wayland			            	# 显示管理器
 xorg-xwayland       			# xorg 兼容
-ttf-noto-sans-mono-vf	    	# 英文等宽字体（动态字重）	
-otf-noto-sans-mono-cjk-vf   	# 中文等宽字体（动态字重）
-noto-fonts-emoji        		# emoji 表情字体
+
+[字体]
+├── ttf-noto-sans-vf            # 无衬线西文字体（动态字重）
+├── ttf-noto-sans-cjk-vf        # 无衬线中日韩字体（动态字重）
+├── ttf-noto-serif-vf           # 衬线西文字体（动态字重）
+├── ttf-noto-serif-cjk-vf       # 衬线中日韩（动态字重）
+├── ttf-noto-sans-mono-vf       # 等宽英文字体（动态字重）	
+├── ttf-noto-sans-mono-cjk-vf   # 等宽中日韩字体（动态字重）
+├── noto-fonts-emoji            # emoji 表情字体
+└── nerd-fonts-noto-sans-mono	# 带图标的等宽字体
+
 fcitx5-im	            		# 输入法框架（包组）
 ├── fcitx5-chinese-addons       # 中文输入法
 ├── fcitx5-pinyin-moegirl   	# 萌娘百科词库
 └── kwindowsystem               # 手动补充依赖性（修复一个 fcitx5-configtool 无法启动的问题）
 xdg-desktop-portal	        	# D-Bus 接口（桌面集成功能：文件选择、屏幕共享、通知系统、设置管理、URI 处理等）
 └── xdg-desktop-portal-wlr  	# D-Bus 接口的 wlroots 桌面（如 Hyprland、Wayfire 等）后端实现
+
 hyprland	            		# 窗口管理器
-├── alacritty / foot       		# 终端模拟器
+├── foot                        # 终端模拟器
 ├── waybar		            	# 状态栏
 │	├── rofi-wayland        	# 程序启动器
 │	├── cliphist            	# 剪切板管理器

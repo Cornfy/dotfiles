@@ -1,13 +1,11 @@
 /* Rofi Power Menu Theme - Based on rounded-pink-dark */
 
 * {
-    /* 从你的主题中提取的颜色 */
     bg0:    #212121F2;
     bg3:    #EC407AF2;
     fg0:    #E6E6E6;
 
-    /* 为了显示图标, 需要使用 Nerd Font 版本的 Roboto */
-    font:   "Roboto Nerd Font 14";
+    font:   "monospace 18";
 
     background-color:   transparent;
     text-color:         @fg0;
@@ -19,7 +17,7 @@
 
 window {
     width:      25%;	/* 宽度，或者用 px, e.g. 350px */
-    height:     480px;	/* 高度 */
+    height:     50%;	/* 高度 */
     border:     2px;
     border-radius:  24px;
     border-color:   @bg3;
