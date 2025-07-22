@@ -23,8 +23,8 @@
 
 window {
     location:       north;
-    y-offset:       calc(40% - 176px);
-    width:          720;
+    y-offset:       calc(20%);
+    height:         60%;
     border-radius:  24px;
 
     background-color:   @bg0;
@@ -65,7 +65,6 @@ listview {
     background-color:   transparent;
 
     margin:     12px 0 0;
-    lines:      12;
     columns:    2;
 
     fixed-height: false;
