@@ -57,12 +57,12 @@
 
     "cpu": {
         "format": "  {usage: >3}%",
-        "on-click": "alacritty -e btop"
+        "on-click": "$TERM -e btop"
     },
 
     "memory": {
         "format": "  {: >3}%",
-        "on-click": "alacritty -e btop"
+        "on-click": "$TERM -e btop"
     },
 
     "network": {
@@ -70,7 +70,7 @@
         "format-wifi": "   {essid}",
         "format-ethernet": "   {ifname}: {ipaddr}/{cidr}",
         "format-disconnected": "⚠  Disconnected",
-        "on-click": "alacritty -e nmtui"
+        "on-click": "$TERM -e nmtui"
     },
 
     "bluetooth": {

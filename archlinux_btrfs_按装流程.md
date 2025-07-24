@@ -122,8 +122,8 @@ mkdir -p /mnt/{boot/efi,boot/efi_windows,home,var/log,var/cache,var/lib/docker,s
 
 
 # 挂载 EFI 启动分区
-mount -o noauto,nofail，x-systemd.automount /dev/sda1 /mnt/boot/efi
-mount -o noauto,nofail，x-systemd.automount /dev/sdb1 /mnt/boot/efi_windows
+mount -o noauto,nofail,x-systemd.automount /dev/sda1 /mnt/boot/efi
+mount -o noauto,nofail,x-systemd.automount /dev/sdb1 /mnt/boot/efi_windows
 
 
 # 挂载 @home 子卷
