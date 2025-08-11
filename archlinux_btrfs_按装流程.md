@@ -21,9 +21,9 @@
 ```txt
 archlinux 的子卷结构
 ├── @                 --> /                        archlinux根分区
+│
 ├── 硬盘1的EFI         --> /boot/efi                挂载 archlinux 启动引导分区
-├── 硬盘2的EFI         --> /boot/efi_windows        挂载 Windows 启动引导分区
-│												   （便于grub启动双系统，而无需切换硬盘启动顺序）
+├── 硬盘2的EFI         --> /boot/efi_windows        挂载 Windows 启动引导分区（便于grub启动双系统，而无需切换硬盘启动顺序）
 │
 ├── @home             --> /home                    挂载 /home 用户文件夹
 ├── @var_log          --> /var/log                 挂载 archlinux 系统日志文件夹
@@ -50,6 +50,7 @@ cat /sys/firmware/efi/fw_platform_size
 
 # 设置最大字体
 setfont ter-132b
+    # 也可以执行 setfont -d 设置双倍字体大小
 ```
 
 
@@ -94,8 +95,8 @@ cfdisk /dev/sda
 
 
 # 格式化分区（以 /dev/sda2 作为archlinux根目录 / 为例）
-mkfs.fat -F32 /dev/sda1					# EFI 分区应该是 Fat32 文化系统
-mkfs.btrfs -f -L "archlinux" /dev/sda2		# -L 是参数设置该卷的标签
+mkfs.fat -F32 /dev/sda1                     # EFI 分区应该是 Fat32 文化系统
+mkfs.btrfs -f -L "archlinux" /dev/sda2      # -L 是参数设置该卷的标签
 
 
 # 由于 Arch ISO 是只读的（修改会在重启后清空），
@@ -344,11 +345,19 @@ mkinitcpio -P
     # 通常不需要自己创建新的 initramfs
     # 因为在执行 pacstrap 时已经安装 linux（包），这时已经运行过 mkinitcpio 了。
 
-# 安装grub
+
+# 安装 Grub
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
 
-# 生成grub配置
+    # 如果是使用 BIOS 方式引导，那么安装 Grub 的命令应该是：
+    grub-install --target=i386-pc --bootloader-id=GRUB /dev/sda
+        # 注意，BIOS 方式应该安装到硬盘（如：/dev/sda ），而不是分区（如：/dev/sda1）
+
+    # 如果你的平台不是 x86_64 ，请参考 Arch Wiki
+
+# 生成 Grub 配置
 grub-mkconfig -o /boot/grub/grub.cfg
+
 
 # 如需多系统引导，请修改 /etc/default/grub 文件，并重新生成grub配置
 vim /etc/default/grub
@@ -359,6 +368,8 @@ vim /etc/default/grub
         # 注意，是英文字母 x 而不是 “乘以” 符号
 
     # 保存退出
+
+# 需要更新 Grub 配置文件
 grub-mkconfig -o /boot/grub/grub.cfg
 
     # 后续可安装 aur 仓库中的 `update-grub` 包，来完成 grub 更新操作，以后直接执行 `sudo update-grub` 即可
@@ -427,8 +438,8 @@ sudo pacman -Syyu
 # 安装显示管理器 wayland 和 xorg
 sudo pacman -S wayland xorg-xwayland xorg-server xorg-xinit
 
-# 安装 Gnome 桌面
-sudo pacman -S gnome-shell gnome-desktop
+# 安装 Gnome 桌面和 Gnome 终端模拟器
+sudo pacman -S gnome-shell gnome-desktop gnome-console
 
 # 在 tty 里可直接启动 gnome（wayland） 桌面
 gnome-shell --wayland
@@ -493,7 +504,7 @@ sudo vim /etc/pacman.d/mirrorlist-archlinuxcn
 	# 保存退出
 
 # 更新 archlinuxcn 密钥环
-sudo pacman -S archlinuxcn-keyring
+sudo pacman -Sy archlinuxcn-keyring
 
 
 
