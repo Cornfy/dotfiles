@@ -2,3 +2,8 @@
 show_hidden = true
 show_symlink = true
 linemode = "info"
+
+[plugin]
+prepend_previewers = [
+    { mime = "audio/*",   run = "exifaudio"}
+]
