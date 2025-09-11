@@ -1,0 +1,44 @@
+#!/bin/bash
+# convert_to_hevc.sh
+# 使用 VAAPI 将 H.264 视频转 HEVC
+
+# 检查输入参数
+if [ "$#" -ne 2 ]; then
+    echo "用法: $0 输入文件 输出文件"
+    exit 1
+fi
+
+INPUT="$1"
+OUTPUT="$2"
+
+# 检查输入文件是否存在
+if [ ! -f "$INPUT" ]; then
+    echo "错误: 输入文件 '$INPUT' 不存在"
+    exit 1
+fi
+
+# 显示输入视频信息（可选）
+echo "正在处理视频：$INPUT"
+ffmpeg -i "$INPUT" 2>&1 | grep -E "Stream|fps"
+echo ""
+
+# 执行 ffmpeg 转码
+ffmpeg -hide_banner \
+    -hwaccel vaapi -vaapi_device /dev/dri/renderD128 \
+    -i "$INPUT" \
+    -vf "format=nv12,hwupload" \
+    -c:v hevc_vaapi -rc_mode 4 -qp 18 \
+    -c:a copy \
+    "$OUTPUT"
+
+# 提示完成
+if [ $? -eq 0 ]; then
+    echo "转码完成: $OUTPUT"
+    # 显示输入视频信息（可选）
+    echo ""
+    echo "处理完的视频：$OUTPUT"
+    ffmpeg -i "$OUTPUT" 2>&1 | grep -E "Stream|fps"
+else
+    echo "转码失败"
+fi
+
