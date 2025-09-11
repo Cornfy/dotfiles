@@ -24,3 +24,6 @@ fish_add_path "$HOME/bin"
 # GO Proxy Setting
 set -gx GOPROXY "https://goproxy.cn"
 
+# Use ff scrept (~/.local/bin/ff) to return path, by press ctrl+f
+bind \cf ff-insert
+

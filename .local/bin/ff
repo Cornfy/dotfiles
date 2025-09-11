@@ -1,30 +1,71 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 文件搜索脚本 (rg + fzf)，支持排除目录
 # 支持相对路径（node_modules/）和绝对路径（/home/elysia/Apps）
+# 改进：对于简单的相对目录名（例如 "node_modules"），实现关键词式排除，即排除任意层级的同名目录
+
+# ===== 脚本健壮性设置 =====
+# 遇到错误立即退出
+set -euo pipefail
+
+# ===== 依赖检查 =====
+command -v rg >/dev/null || { echo "错误：ripgrep (rg) 未找到。请安装 ripgrep。" >&2; exit 1; }
+command -v fzf >/dev/null || { echo "错误：fzf 未找到。请安装 fzf。" >&2; exit 1; }
+command -v realpath >/dev/null || { echo "错误：realpath 未找到。请安装 realpath (通常在 coreutils 或 realpath 包中)。" >&2; exit 1; }
 
 # ===== 配置要排除的目录 =====
+# 支持相对路径（例如 "node_modules"）和绝对路径（例如 "/home/elysia/Games"）
+# 注意：~ 符号会被自动展开为 $HOME。
+#   - 对于不含斜杠的相对路径（如 "node_modules", ".git"），它们将被视为关键词，并在任意层级被排除。
+#     例如 "node_modules" 会被转换为 "--glob=!**/node_modules/**"。
+#   - 对于包含斜杠的相对路径（如 "src/temp_dir"），它们会作为特定的相对路径被排除。
+#     例如 "src/temp_dir" 会被转换为 "--glob=!src/temp_dir"。
 EXCLUDES=(
   ".git"
   "node_modules"
   "dist"
   "__pycache__"
+  ".wine"
   "/home/elysia/Games/umu/prefixes"
 )
+
+# 允许通过命令行参数添加临时的排除项
+# 例如：./script.sh "temp_dir" "/tmp/logs"
+if [[ "${#@}" -gt 0 ]]; then
+  echo "信息：检测到命令行参数，将作为额外的排除项添加到列表中。" >&2
+  for arg in "$@"; do
+    EXCLUDES+=("$arg")
+  done
+fi
 
 # ===== 构造 ripgrep 参数 =====
 RG_EXCLUDES=()
 for path in "${EXCLUDES[@]}"; do
-  expanded=$(eval echo "$path")   # 展开 ~
-  if [[ "$expanded" = /* ]]; then
-    # 如果是绝对路径 → 转换为相对路径（基于当前工作目录）
-    rel=$(realpath --relative-to="$(pwd)" "$expanded" 2>/dev/null || echo "$expanded")
+  # 安全地展开 ~ 为 $HOME，避免使用 eval
+  path_expanded="${path/#\~/$HOME}"
+
+  if [[ "$path_expanded" = /* ]]; then
+    # 如果是绝对路径 → 转换为相对路径（基于当前工作目录），以便 ripgrep 的 --glob 正常工作
+    # realpath 失败时（例如路径不存在），会回退到使用原始路径，rg 会忽略不存在的 glob。
+    rel=$(realpath --relative-to="$(pwd)" "$path_expanded" 2>/dev/null || echo "$path_expanded")
     RG_EXCLUDES+=("--glob=!$rel")
   else
-    # 相对路径直接用
-    RG_EXCLUDES+=("--glob=!$expanded")
+    # 这是一个相对路径
+    # 检查是否为简单的目录名（不包含任何斜杠）
+    if [[ "$path_expanded" != *"/"* ]]; then
+      # 是一个简单的目录名，将其转换为关键词式排除模式
+      # 例如 "node_modules" -> "--glob=!**/node_modules/**"
+      RG_EXCLUDES+=("--glob=!**/${path_expanded}/**")
+      echo "Debug: 排除关键词 '${path_expanded}' (任意层级)" >&2
+    else
+      # 是一个包含斜杠的特定相对路径，按原样排除
+      # 例如 "src/temp_dir" -> "--glob=!src/temp_dir"
+      RG_EXCLUDES+=("--glob=!$path_expanded")
+      echo "Debug: 排除特定相对路径 '${path_expanded}'" >&2
+    fi
   fi
 done
 
 # ===== 执行搜索 =====
-rg --files "${RG_EXCLUDES[@]}" | fzf
-
+# --files: 只打印文件名，不打印匹配内容
+# "${RG_EXCLUDES[@]}": 正确展开数组元素作为单独的参数
+rg --files --hidden "${RG_EXCLUDES[@]}" | fzf
