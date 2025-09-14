@@ -2,7 +2,7 @@
     "layer": "bottom",
     "position": "bottom", // Waybar position (top|bottom|left|right)
     "height": 30,
-    "modules-left": ["custom/launcher", "tray", "clock", "custom/network_traffic", "hyprland/workspaces"],
+    "modules-left": ["custom/launcher", "tray", "clock", "custom/mpc", "custom/network_traffic", "hyprland/workspaces"],
     "modules-center": ["hyprland/window"],
     "modules-right": ["custom/clipboard", "temperature", "cpu", "memory", "network", "bluetooth", "backlight", "pulseaudio", "battery" , "custom/power"],
 
@@ -17,6 +17,24 @@
     "tray": {
         "icon-size": 14,
         "spacing": 5
+    },
+
+    "clock": {
+        "format": "  {:%m-%d    %H:%M}",
+        "format-alt": "  {:%Y-%m-%d, %a    %I:%M:%S %p}",
+        "interval": 1,
+      	"tooltip": false
+    },
+
+    "custom/mpc": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.config/waybar/scripts/mpc_waybar.sh",
+        "interval": 2,
+        "on-click": "mpc toggle",
+        "on-scroll-up": "mpc next",
+        "on-scroll-down": "mpc prev",
+        "escape": true
     },
 
     "hyprland/workspaces": {
@@ -109,13 +127,6 @@
             "default": ["  ", "  "]
         },
         "on-click": "pavucontrol"
-    },
-
-    "clock": {
-        "format": "  {:%m-%d    %H:%M}",
-        "format-alt": "  {:%Y-%m-%d, %a    %I:%M:%S %p}",
-        "interval": 1,
-      	"tooltip": false
     },
 
     "battery": {

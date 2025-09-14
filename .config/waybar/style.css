@@ -35,6 +35,7 @@ window#waybar {
 #backlight,
 #pulseaudio,
 #clock,
+#custom-mpc,
 #battery,
 #custom-power{
     padding: 0 3px;
@@ -58,6 +59,19 @@ window#waybar {
     background: #ffd3e0;
 }
 */
+
+#custom-mpc {
+    color: #d8dee9;
+}
+#custom-mpc.playing {
+    color: #a3be8c;
+}
+#custom-mpc.paused {
+    color: #ebcb8b;
+}
+#custom-mpc.stopped {
+    color: #6c7385;
+}
 
 #custom-clipboard {
     color: #d08770;
