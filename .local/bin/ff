@@ -26,6 +26,7 @@ EXCLUDES=(
   "__pycache__"
   ".wine"
   "/home/elysia/Games/umu/prefixes"
+  "/home/elysia/Faugus"
 )
 
 # 允许通过命令行参数添加临时的排除项
@@ -55,12 +56,12 @@ for path in "${EXCLUDES[@]}"; do
       # 是一个简单的目录名，将其转换为关键词式排除模式
       # 例如 "node_modules" -> "--glob=!**/node_modules/**"
       RG_EXCLUDES+=("--glob=!**/${path_expanded}/**")
-      echo "Debug: 排除关键词 '${path_expanded}' (任意层级)" >&2
+      # echo "Debug: 排除关键词 '${path_expanded}' (任意层级)" >&2
     else
       # 是一个包含斜杠的特定相对路径，按原样排除
       # 例如 "src/temp_dir" -> "--glob=!src/temp_dir"
       RG_EXCLUDES+=("--glob=!$path_expanded")
-      echo "Debug: 排除特定相对路径 '${path_expanded}'" >&2
+      # echo "Debug: 排除特定相对路径 '${path_expanded}'" >&2
     fi
   fi
 done
@@ -68,4 +69,4 @@ done
 # ===== 执行搜索 =====
 # --files: 只打印文件名，不打印匹配内容
 # "${RG_EXCLUDES[@]}": 正确展开数组元素作为单独的参数
-rg --files --hidden "${RG_EXCLUDES[@]}" | fzf
+rg --files --hidden --no-ignore "${RG_EXCLUDES[@]}" | fzf
