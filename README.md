@@ -131,6 +131,6 @@ hyprland	            		# 窗口管理器
 eza		                	    # 一个高级版的 ls
 bat		                	    # 一个高级版的 cat
 android-tools                   # Android adb 工具（adb、fastboot）
-ntfs-3g	            			# 提供挂载 Windows NTFS 分区的能力
+ntfs-3g	            			# 提供挂载 Windows NTFS 分区的能力（Arch用户一般使用较新的内核，自带 ntfs3 支持）
 gvfs-mtp            			# 提供自动挂载 U 盘、MTP 设备的能力
 ```

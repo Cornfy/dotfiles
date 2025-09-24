@@ -13,7 +13,6 @@ if status is-interactive
     alias vim='nvim'
     alias ssh='env TERM=xterm-256color ssh'
     alias f='fastfetch'
-    alias y='yazi'
     alias c='clear'
 end
 
@@ -24,6 +23,9 @@ fish_add_path "$HOME/bin"
 # GO Proxy Setting
 set -gx GOPROXY "https://goproxy.cn"
 
-# Use ff scrept (~/.local/bin/ff) to return path, by press ctrl+f
+# Use ff scrept (~/.local/bin/ff) to return path
 bind \cf ff-insert
+
+# yazi here
+bind \cy y
 

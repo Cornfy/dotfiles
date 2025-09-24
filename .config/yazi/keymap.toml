@@ -2,65 +2,80 @@
 [[mgr.prepend_keymap]]
 on   = [ "!" ]
 run  = "shell '$SHELL' --block"
-desc = "Open shell here"
+desc = "open shell here"
 
 
 # -----------------------------------------------------
-# Plugin - yazi-rs/plugins:smart-enter
+# plugin - yazi-rs/plugins:smart-enter
+[[mgr.prepend_keymap]]
+on   = [ "l" ]
+run  = "plugin smart-enter"
+desc = "enter the child directory, or open the file"
+
 [[mgr.prepend_keymap]]
 on   = [ "<right>" ]
 run  = "plugin smart-enter"
-desc = "Enter the child directory, or open the file"
+desc = "enter the child directory, or open the file"
 
 
 # -----------------------------------------------------
-# Plugin - grappas/wl-clipboard
+# plugin - grappas/wl-clipboard
 [[mgr.prepend_keymap]]
 on = [ "Y" ]
 run = "plugin wl-clipboard"
-#run = [ 'shell -- for path in "$@"; do echo "file://$path"; done | wl-copy -t text/uri-list', "yank" ]
-desc = "Copy selected files to the system clipboard (for wayland)"
+#run = [ 'shell -- for path in "$@"; do printf "file://$path"; done | wl-copy -t text/uri-list', "yank" ]
+desc = "copy to the system clipboard (for wayland)"
 
 
 # -----------------------------------------------------
-# Plugin - yazi-rs/plugins:mount
+# plugin - yazi-rs/plugins:mount
 [[mgr.prepend_keymap]]
-on  = [ "M" ]
+on  = [ "M", "P" ]
 run = "plugin mount"
-desc = "Managing partition mounts: mount(for 'm'), unmount(for 'u'), eject(for 'e'). quit(for 'q')"
+desc = "partition mounts: [m]ount [u]nmount [e]ject [q]uit"
+
 
 # -----------------------------------------------------
-# Plugin - yazi-rs/plugins:chmod
+# plugin - yazi-rs/plugins:chmod
 [[mgr.prepend_keymap]]
 on   = [ "c", "m" ]
 run  = "plugin chmod"
-desc = "Chmod on selected files"
+desc = "chmod on selected files"
 
 
 # -----------------------------------------------------
-# Plugin - KKV9/compress
+# plugin - kkv9/compress
 [[mgr.prepend_keymap]]
-on   = [ "c", "a", "a" ]
+on   = [ "C", "a", "a" ]
 run  = "plugin compress"
-desc = "Archive selected files"
+desc = "archive selected files"
 
 [[mgr.prepend_keymap]]
-on   = [ "c", "a", "p" ]
+on   = [ "C", "a", "p" ]
 run  = "plugin compress -p"
-desc = "Archive selected files (password)"
+desc = "archive selected files (password)"
 
 [[mgr.prepend_keymap]]
-on   = [ "c", "a", "h" ]
+on   = [ "C", "a", "h" ]
 run  = "plugin compress -ph"
-desc = "Archive selected files (password+header)"
+desc = "archive selected files (password+header)"
 
 [[mgr.prepend_keymap]]
-on   = [ "c", "a", "l" ]
+on   = [ "C", "a", "l" ]
 run  = "plugin compress -l"
-desc = "Archive selected files (compression level)"
+desc = "archive selected files (compression level)"
 
 [[mgr.prepend_keymap]]
-on   = [ "c", "a", "u" ]
+on   = [ "C", "a", "u" ]
 run  = "plugin compress -phl"
-desc = "Archive selected files (password+header+level)"
+desc = "archive selected files (password+header+level)"
+
+
+# -----------------------------------------------------
+# plugin - ndtoan96/ouch
+[[mgr.prepend_keymap]]
+on = [ "C", "C" ]
+run = "plugin ouch"
+desc = "compress with ouch"
+
 

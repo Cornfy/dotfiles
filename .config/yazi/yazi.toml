@@ -2,8 +2,123 @@
 show_hidden = true
 show_symlink = true
 linemode = "info"
+ratio = [1, 4, 5]
+
+[opener]
+	edit = [
+		{ run = '${EDITOR:-vi} "$@"', desc = "$EDITOR", block = true, for = "unix" },
+	]
+
+	edit-in-new-window = [
+		# Alacritty
+		# { run = 'alacritty -e nvim "$@"', orphan = true, for = "unix", desc = "Edit in new window (with Alacritty)" },
+
+		# foot 终端
+		{ run = 'foot ${EDITOR:-vi} "$@"', orphan = true, for = "unix", desc = "Edit in new window (with Foot)" },
+
+		# Gnome Terminal
+		# { run = 'gnome-terminal -- ${EDITOR:-vi} "$@"', orphan = true, for = "unix", desc = "Edit in new window (with Gnome Terminal)" },
+
+		# Kitty
+		# { run = 'kitty -e ${EDITOR:-vi} "$@"', orphan = true, for = "unix", desc = "Edit in new window (with Kitty)" },
+
+		# WezTerm:
+		# { run = 'wezterm start -- nvim "$@"', orphan = true, for = "unix", desc = "Edit in new window (with WezTerm)" },
+	]
+
+	open = [
+		{ run = 'xdg-open "$1"', desc = "Open", for = "linux" },
+	]
+	
+	reveal = [
+		{ run = 'xdg-open "$(dirname "$1")"', desc = "Reveal", for = "linux" },
+
+		# 经测试，在使用 ‘y’ 脚本启动 Yazi 时，该方式展示 EXIF 信息，无法按 Enter 返回 Yazi
+		# { run = '''clear; exiftool "$1"; echo "Press enter to exit"; read _''', block = true, desc = "Show EXIF", for = "unix" },
+
+		# 使用 bat 作为分页器，避免上述问题
+		{ run = 'exiftool "$1" | bat --paging=always', block = true, desc = "Show EXIF", for = "unix" },
+	]
+	
+	extract = [
+		{ run = 'ya pub extract --list "$@"', desc = "Extract here", for = "unix" },
+
+		{ run = 'ouch d -y "$@"', desc = "Extract here with ouch", for = "unix" },
+	]
+	
+	play = [
+		{ run = 'xdg-open "$1"', desc = "Play", for = "linux" },
+
+		# 同上，使用 bat 避免阻塞
+		# { run = '''mediainfo "$1"; echo "Press enter to exit"; read _''', block = true, desc = "Show media info", for = "unix" },
+		{ run = '''mediainfo "$1" | bat --paging=always''', block = true, desc = "Show media info", for = "unix" },
+	]
+
+[open]
+	rules = [
+		# Folder
+		{ name = "*/", use = [ "edit", "open", "reveal" ] },
+
+		# Text
+		{ mime = "text/*", use = [ "edit", "edit-in-new-window", "reveal" ] },
+
+		# Image
+		{ mime = "image/*", use = [ "open", "reveal" ] },
+
+		# Media
+		{ mime = "{audio,video}/*", use = [ "play", "reveal" ] },
+
+		# Archive
+		{ mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", use = [ "extract", "reveal" ] },
+
+		# JSON
+		{ mime = "application/{json,ndjson}", use = [ "edit", "reveal" ] },
+		{ mime = "*/javascript", use = [ "edit", "reveal" ] },
+
+		# Empty file
+		{ mime = "inode/empty", use = [ "edit", "reveal" ] },
+
+		# Fallback
+		{ name = "*", use = [ "open", "reveal" ] },
+	]
 
 [plugin]
-prepend_previewers = [
-    { mime = "audio/*",   run = "exifaudio"}
-]
+	prepend_preloaders = [
+		# Replace magick, image, video with mediainfo
+		{ mime = "{audio,video,image}/*", run = "mediainfo" },
+		{ mime = "application/subrip", run = "mediainfo" },
+
+		# Adobe Illustrator, Adobe Photoshop is image/adobe.photoshop, already handled above
+		{ mime = "application/postscript", run = "mediainfo" },
+	]
+
+	prepend_previewers = [
+		# Preview directory tree with eza
+		{ name = "*/", run  = 'piper -- eza -TL=2 --color=always --icons=always --group-directories-first --no-quotes "$1"' },
+	
+		# Preview markdown with glow
+		{ name = "*.md", run  = 'piper -- CLICOLOR_FORCE=1 glow -s=dark "$1"' },
+	
+		# Replace magick, image, video with mediainfo
+		{ mime = "{audio,video,image}/*", run = "mediainfo"},
+		{ mime = "application/subrip", run = "mediainfo" },
+	
+		# Adobe Illustrator, Adobe Photoshop is image/adobe.photoshop, already handled above
+		{ mime = "application/postscript", run = "mediainfo" },
+	
+		# Archive previewer
+		{ mime = "application/*zip",            run = "ouch" },
+		{ mime = "application/x-tar",           run = "ouch" },
+		{ mime = "application/x-bzip2",         run = "ouch" },
+		{ mime = "application/x-7z-compressed", run = "ouch" },
+		{ mime = "application/x-rar",           run = "ouch" },
+		{ mime = "application/vnd.rar",         run = "ouch" },
+		{ mime = "application/x-xz",            run = "ouch" },
+		{ mime = "application/xz",              run = "ouch" },
+		{ mime = "application/x-zstd",          run = "ouch" },
+		{ mime = "application/zstd",            run = "ouch" },
+		{ mime = "application/java-archive",    run = "ouch" },
+	]
+
+[tasks]
+	image_alloc = 1073741824	# = 1 GB
