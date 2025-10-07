@@ -1,5 +1,7 @@
 #!/bin/bash
 
+killall -SIGTERM rofi &> /dev/null
+
 # =============================================================================
 # ROFI ADVANCED CLIPBOARD MANAGER
 #

@@ -147,7 +147,7 @@ btrfs filesystem mkswapfile --size 8G --uuid clear /mnt/swap/swapfile
 	# 正常创建 swap 分区是使用 mkswap 命令
 
 # 启用 swapfile
-swapon /mnt/mnt/swapfile
+swapon /mnt/swap/swapfile
 
 
 # （可选）挂载 Windows 分区
@@ -187,9 +187,6 @@ mount -t ntfs3 /dev/sdb3 /mnt/mnt/Windows_D
     - 但若安装 archinstall ，则 ntfs-3g 会作为 archinstall 的依赖被安装
 
 ```shell
-# 仅更新 Arch ISO 中的 archlinux 密钥环
-pacman -Sy archlinux-keyring
-
 # 更新 Arch ISO 中的软件源（切换为国内镜像源）
 reflector --country China --protocol https --save /etc/pacman.d/mirrorlist
     # 可用 vim 查看
@@ -198,6 +195,10 @@ reflector --country China --protocol https --save /etc/pacman.d/mirrorlist
         # 确认无误后可按 :wq 保存退出
         # 若修改错误，可按 esc 回常规模式，再按 u 撤销
         # 也可按 esc 后，按 :q! 不保存强制退出。
+
+
+# 仅更新 Arch ISO 中的 archlinux 密钥环
+pacman -Sy archlinux-keyring
 
 
 # 安装 archlinux 系统

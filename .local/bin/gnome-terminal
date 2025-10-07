@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# --- 路径变量定义 ---
+# 真正的 gnome-terminal 路径
+REAL_TERMINAL="/usr/bin/gnome-terminal"
+
+# foot 终端的路径 (兜底程序)
+ROLLBACK_TERMINAL="/usr/bin/foot"
+# --------------------
+
+if [ -x "$REAL_TERMINAL" ]; then
+    exec "$REAL_TERMINAL" "$@"
+elif [ -x "$ROLLBACK_TERMINAL" ]; then
+    exec "$ROLLBACK_TERMINAL" "$@" 2>/dev/null
+else
+    echo "Error: Neither $REAL_TERMINAL nor $ROLLBACK_TERMINAL was found." >&2
+    exit 1
+fi

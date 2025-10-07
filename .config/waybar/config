@@ -88,7 +88,7 @@
         "format-wifi": "   {essid}",
         "format-ethernet": "   {ifname}: {ipaddr}/{cidr}",
         "format-disconnected": "⚠  Disconnected",
-        "on-click": "$TERM -e nmtui"
+        "on-click": "$TERM -e nmtui" //impala
     },
 
     "bluetooth": {
@@ -96,7 +96,7 @@
         "format-disabled": "  Off",  // 未启用时的图标
         "format-connected": "  {device_alias}",  // 连接设备后的显示格式
         "tooltip-format": "{num_connections}  connected",
-        "on-click": "blueberry"
+        "on-click": "$TERM -e bluetui"
     },
 
     "custom/network_traffic": {
