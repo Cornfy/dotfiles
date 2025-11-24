@@ -69,6 +69,9 @@ case "$chosen_key" in
         ;;
     "logout")
         case "$XDG_CURRENT_DESKTOP" in
+            niri)
+                niri msg action quit
+                ;;
             Hyprland)
                 hyprctl dispatch exit
                 ;;

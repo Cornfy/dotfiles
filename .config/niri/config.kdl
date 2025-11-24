@@ -1,0 +1,318 @@
+environment {
+LANG "zh_CN.UTF-8"
+TERM "foot"
+TERMINAL "foot"
+EDITOR "nvim"
+GTK_IM_MODULE "fcitx"
+QT_IM_MODULE "fcitx"
+XMODIFIERS "@im,fcitx"
+SDL_IM_MODULE "fcitx"
+}
+
+// Input device configuration.
+input {
+    keyboard {
+        xkb {
+            layout "us"
+            variant "altgr-intl"
+        }
+        numlock
+    }
+    touchpad {
+        // off
+        tap
+        // dwt
+        // dwtp
+        // drag false
+        // drag-lock
+        natural-scroll
+        // accel-speed 0.2
+        // accel-profile "flat"
+        // scroll-method "two-finger"
+        // disabled-on-external-mouse
+    }
+    mouse {
+        // off
+        // natural-scroll
+        // accel-speed 0.2
+        // accel-profile "flat"
+        // scroll-method "no-scroll"
+    }
+    trackpoint {
+        // off
+        // natural-scroll
+        // accel-speed 0.2
+        // accel-profile "flat"
+        // scroll-method "on-button-down"
+        // scroll-button 273
+        // scroll-button-lock
+        // middle-emulation
+    }
+    // Focus windows and outputs automatically when moving the mouse into them.
+    // Setting max-scroll-amount="0%" makes it work only on windows already fully on screen.
+    focus-follows-mouse
+}
+
+// You can configure outputs by their name, which you can find
+// by running `niri msg outputs` while inside a niri instance.
+output "DP-1" {
+    // off
+    mode "1920x1080@60.000"
+    scale 1
+    transform "normal"
+    position x=0 y=0
+}
+
+// Settings that influence how windows are positioned and sized.
+layout {
+    // Set gaps around windows in logical pixels.
+    gaps 16
+
+    // When to center a column when changing focus, options are:
+    // "never", "always", "on-overflow".
+    center-focused-column "on-overflow"
+    always-center-single-column
+
+    // You can customize the widths that "switch-preset-column-width" (Mod+W) toggles between.
+    preset-column-widths {
+        proportion 0.25
+        proportion 0.5
+        proportion 0.75
+    }
+    // You can also customize the heights that "switch-preset-window-height" (Mod+Shift+R) toggles between.
+    // preset-window-heights { }
+
+    // You can change the default width of the new windows.
+    default-column-width { proportion 0.75; }
+    // If you leave the brackets empty, the windows themselves will decide their initial width.
+    // default-column-width {}
+
+    // You can change how the focus ring looks.
+    focus-ring {
+        // off
+        width 4
+        active-color "#7fc8ff"
+        inactive-color "#505050"
+    }
+
+    // You can also add a border. It's similar to the focus ring, but always visible.
+    border {
+        off
+        width 4
+        active-color "#ffc87f"
+        inactive-color "#505050"
+        urgent-color "#9b0000"
+    }
+
+    // You can enable drop shadows for windows.
+    shadow {
+        // on
+        softness 30
+        spread 5
+        offset x=0 y=5
+        color "#0007"
+    }
+
+    // Struts shrink the area occupied by windows, similarly to layer-shell panels.
+    struts {
+        // left 64
+        // right 64
+        // top 64
+        // bottom 64
+    }
+}
+
+// This line starts waybar, a commonly used bar for Wayland compositors.
+spawn-sh-at-startup "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP LANG"
+spawn-sh-at-startup "sleep 3 && systemctl --user start hyprpolkitagent"
+spawn-sh-at-startup "swaybg -i ~/Pictures/wall.png -m fill"
+spawn-sh-at-startup "wl-paste --watch cliphist store"
+spawn-at-startup "fcitx5"
+spawn-at-startup "waybar"
+
+// You can change the path where screenshots are saved.
+screenshot-path "~/Pictures/ScreenShots/ScreenShot from %Y-%m-%d %H-%M-%S.png"
+// You can also set this to null to disable saving screenshots to disk.
+// screenshot-path null
+
+// Animation settings.
+animations {
+    // off
+    // slowdown 3.0
+}
+
+// Window rules let you adjust behavior for individual windows.
+prefer-no-csd
+window-rule {
+    draw-border-with-background false
+    geometry-corner-radius 10
+    clip-to-geometry true
+}
+window-rule {
+    match is-active=false
+    opacity 0.75
+}
+window-rule {
+    match is-active=true
+    opacity 0.9
+}
+// Open the Firefox picture-in-picture player as floating by default.
+window-rule {
+    // This app-id regular expression will work for both:
+    // - host Firefox (app-id is "firefox")
+    // - Flatpak Firefox (app-id is "org.mozilla.firefox")
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+binds {
+    // "Mod" is a special modifier equal to Super when running on a TTY, and to Alt
+    // when running as a winit window.
+    //
+    // Most actions that you can bind here can also be invoked programmatically with
+    // `niri msg action do-something`.
+
+    // Mod+?, shows a list of important hotkeys.
+    Mod+Shift+Slash		{ show-hotkey-overlay; }
+
+    // Quit niri.
+    Mod+Escape			hotkey-overlay-title="Power Menu: Shell Script on Rofi" { spawn-sh "~/.config/rofi/scripts/power-menu.sh"; }
+    Ctrl+Alt+Delete		{ quit; }
+
+    // Suggested binds for running programs: terminal, app launcher, screen locker.
+    Mod+Return			hotkey-overlay-title="Open a Terminal: foot" { spawn "foot"; }
+    Mod+R			hotkey-overlay-title="Run an Application: rofi" { spawn-sh "~/.config/rofi/scripts/launch_rofi.sh"; }
+    Mod+Y			hotkey-overlay-title="Open a Tui File Manager: Yazi" { spawn "foot" "-e" "yazi"; }
+    Mod+E			hotkey-overlay-title="Open a File Manager: Thunar" { spawn "thunar"; }
+    Mod+O			hotkey-overlay-title="Open a Web Browser: Firefox" { spawn "firefox"; }
+    Mod+L			hotkey-overlay-title="Lock the Screen: Swaylock" { spawn "swaylock"; }
+
+    // Screenshot
+    Print			{ screenshot-screen; }
+    Shift+Print			{ screenshot; }
+    Alt+Print			{ screenshot-window; }
+
+    // Screen Recording
+    Mod+V			hotkey-overlay-title="Screen Recorder: Shell Script on Rofi" { spawn-sh "~/.config/niri/scripts/screen_recording.sh"; }
+
+    // Clipboard Manager
+    Mod+B			hotkey-overlay-title="Clipboard Manager: Shell Script on Rofi" { spawn-sh "~/.config/rofi/scripts/clipboard-manager.sh"; }
+
+    // Powers off the monitors. To turn them back on, do any input like
+    // moving the mouse or pressing any other key.
+    Mod+Shift+P			{ power-off-monitors; }
+
+    // Example volume keys mappings for PipeWire & WirePlumber.
+    XF86AudioRaiseVolume	allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
+    XF86AudioLowerVolume	allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
+    XF86AudioMute		allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute		allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    // Example brightness key mappings for brightnessctl.
+    XF86MonBrightnessUp		allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "+10%"; }
+    XF86MonBrightnessDown	allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "10%-"; }
+
+    // Open/close the Overview: a zoomed-out view of workspaces and windows.
+    // You can also move the mouse into the top-left hot corner,
+    // or do a four-finger swipe up on a touchpad.
+    Mod+A			repeat=false { toggle-overview; }
+
+    // Close window
+    Mod+Q			repeat=false { close-window; }
+
+    // Center window
+    Mod+C			{ center-column; }
+
+    /* ------------------------ */
+    /* Mod	for focus	*/
+    /* Ctrl	for move	*/
+    /* Shift	for vertical	*/
+    /* Alt	for monitor	*/
+    /* ------------------------ */
+
+    /* ---------- Focus window ---------- */
+    // Focus window
+    Mod+Left			{ focus-column-left; }
+    Mod+Down			{ focus-window-down; }
+    Mod+Up			{ focus-window-up; }
+    Mod+Right			{ focus-column-right; }
+    Mod+Home			{ focus-column-first; }
+    Mod+End			{ focus-column-last; }
+    Mod+WheelScrollDown		{ focus-column-right; }
+    Mod+WheelScrollUp		{ focus-column-left; }
+    // Focus workspace
+    Mod+Page_Down		{ focus-workspace-down; }
+    Mod+Page_Up			{ focus-workspace-up; }
+    Mod+Shift+WheelScrollDown	{ focus-workspace-down; }
+    Mod+Shift+WheelScrollUp	{ focus-workspace-up; }
+    Mod+1			{ focus-workspace 1; }
+    Mod+2			{ focus-workspace 2; }
+    Mod+3			{ focus-workspace 3; }
+    Mod+4			{ focus-workspace 4; }
+    Mod+5			{ focus-workspace 5; }
+    Mod+6			{ focus-workspace 6; }
+    Mod+7			{ focus-workspace 7; }
+    Mod+8			{ focus-workspace 8; }
+    Mod+9			{ focus-workspace 9; }
+    // Switches focus between workspaces.
+    Mod+Tab			{ focus-workspace-previous; }
+    // Focus monitor
+    Alt+Left			{ focus-monitor-left; }
+    Alt+Down			{ focus-monitor-down; }
+    Alt+Up			{ focus-monitor-up; }
+    Alt+Right			{ focus-monitor-right; }
+
+    /* ---------- Move window ---------- */
+    // Move window
+    Mod+Ctrl+Left		{ move-column-left; }
+    Mod+Ctrl+Down		{ move-window-down; }
+    Mod+Ctrl+Up			{ move-window-up; }
+    Mod+Ctrl+Right		{ move-column-right; }
+    Mod+Ctrl+Home		{ move-column-to-first; }
+    Mod+Ctrl+End		{ move-column-to-last; }
+    // Move window in and out of a column.
+    Mod+Ctrl+BracketLeft	{ consume-or-expel-window-left; }
+    Mod+Ctrl+BracketRight	{ consume-or-expel-window-right; }
+    // Move window to workspace
+    Mod+Ctrl+Page_Down		{ move-column-to-workspace-down; }
+    Mod+Ctrl+Page_Up		{ move-column-to-workspace-up; }
+    Mod+Ctrl+WheelScrollDown	{ move-column-to-workspace-down; }
+    Mod+Ctrl+WheelScrollUp	{ move-column-to-workspace-up; }
+    Mod+Ctrl+1			{ move-column-to-workspace 1; }
+    Mod+Ctrl+2			{ move-column-to-workspace 2; }
+    Mod+Ctrl+3			{ move-column-to-workspace 3; }
+    Mod+Ctrl+4			{ move-column-to-workspace 4; }
+    Mod+Ctrl+5			{ move-column-to-workspace 5; }
+    Mod+Ctrl+6			{ move-column-to-workspace 6; }
+    Mod+Ctrl+7			{ move-column-to-workspace 7; }
+    Mod+Ctrl+8			{ move-column-to-workspace 8; }
+    Mod+Ctrl+9			{ move-column-to-workspace 9; }
+    // Move window to monitor
+    Alt+Ctrl+Left		{ move-column-to-monitor-left; }
+    Alt+Ctrl+Down		{ move-column-to-monitor-down; }
+    Alt+Ctrl+Up			{ move-column-to-monitor-up; }
+    Alt+Ctrl+Right		{ move-column-to-monitor-right; }
+
+    /* ---------- Move workspace ---------- */
+    Mod+Shift+Page_Down		{ move-workspace-down; }
+    Mod+Shift+Page_Up		{ move-workspace-up; }
+
+
+    /* ---------- Set windows size ---------- */
+    Mod+W			{ switch-preset-column-width; }
+    Mod+H			{ switch-preset-window-height; }
+    Mod+M			{ maximize-column; }
+    Mod+F			{ fullscreen-window; }
+    // Finer width adjustments.
+    Mod+Minus			{ set-column-width "-10%"; }
+    Mod+Equal			{ set-column-width "+10%"; }
+    // Finer height adjustments when in column with other windows.
+    Mod+Shift+Minus		{ set-window-height "-10%"; }
+    Mod+Shift+Equal		{ set-window-height "+10%"; }
+
+    // Move the focused window between the floating and the tiling layout.
+    Mod+T			{ toggle-window-floating; }
+    Alt+Tab			{ switch-focus-between-floating-and-tiling; }
+
+    // Toggle tabbed column display mode.
+    Mod+G			{ toggle-column-tabbed-display; }
+}
