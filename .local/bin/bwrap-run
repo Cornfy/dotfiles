@@ -1,0 +1,217 @@
+#!/bin/bash
+# file: bwrap-run.sh
+# 描述: 这是一个基于 bubblewrap (bwrap) 的通用沙箱运行工具。
+
+# --- 1. 用户配置区 (Configuration Settings) ---
+readonly ROOT_DIRECTORY_FOR_PERSISTENCE_OF_ALL_SANDBOXES_ON_SYSTEM="$HOME/.sandbox_data"	# 系统上所有沙盒的持久化数据的根目录
+readonly HOME_DIRECTORY_FOR_APPLICATION_INSIDE_SANDBOX="/home/apps"				# 沙箱内应用程序的 HOME 目录
+readonly VALUE_OF_PATH_ENVIRONMENT_VARIABLE_IN_SANDBOX="/usr/local/bin:/usr/bin:/bin"		# 沙箱内 PATH 环境变量的值
+
+# --- 2. 内部变量 (Runtime & Context) ---
+FULL_PATH_OF_BINARY_FILE_FOR_TARGET_APPLICATION_ON_SYSTEM=""
+IDENTIFIER_FOR_TARGET_APPLICATION=""
+PERSISTENCE_DIRECTORY_FOR_TARGET_APPLICATION_ON_SYSTEM=""
+BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS=""
+
+# --- 3. 函数定义 ---
+
+# 打印用法信息并退出
+print_usage_and_exit() {
+    echo "用法: $0 <命令> [参数...]"
+    echo "  例如: $0 /path/to/your_program"
+    exit 1
+}
+
+# 解析输入，初始化上下文路径，创建持久化目录
+initialize_context_and_paths() {
+    if [ $# -eq 0 ]; then
+        print_usage_and_exit
+    fi
+
+    FULL_PATH_OF_BINARY_FILE_FOR_TARGET_APPLICATION_ON_SYSTEM=$(realpath -e "$1" 2>/dev/null)
+    if [ -z "$FULL_PATH_OF_BINARY_FILE_FOR_TARGET_APPLICATION_ON_SYSTEM" ]; then
+        FULL_PATH_OF_BINARY_FILE_FOR_TARGET_APPLICATION_ON_SYSTEM=$(which "$1" 2>/dev/null)
+    fi
+
+    if [ -z "$FULL_PATH_OF_BINARY_FILE_FOR_TARGET_APPLICATION_ON_SYSTEM" ]; then
+        echo "错误：无法找到可执行文件 '$1' 的完整路径。"
+        exit 1
+    fi
+
+    local binary_file_name
+    binary_file_name=$(basename "$FULL_PATH_OF_BINARY_FILE_FOR_TARGET_APPLICATION_ON_SYSTEM")
+    
+    IDENTIFIER_FOR_TARGET_APPLICATION="$binary_file_name"
+    PERSISTENCE_DIRECTORY_FOR_TARGET_APPLICATION_ON_SYSTEM="$ROOT_DIRECTORY_FOR_PERSISTENCE_OF_ALL_SANDBOXES_ON_SYSTEM/$IDENTIFIER_FOR_TARGET_APPLICATION"
+
+    if [ ! -d "$PERSISTENCE_DIRECTORY_FOR_TARGET_APPLICATION_ON_SYSTEM" ]; then
+        echo "宿主数据目录 '$PERSISTENCE_DIRECTORY_FOR_TARGET_APPLICATION_ON_SYSTEM' 不存在，正在创建..."
+        mkdir -p "$PERSISTENCE_DIRECTORY_FOR_TARGET_APPLICATION_ON_SYSTEM" || { echo "错误: 无法创建数据目录"; exit 1; }
+    fi
+    echo "使用沙箱路径: $HOME_DIRECTORY_FOR_APPLICATION_INSIDE_SANDBOX (主机路径: $PERSISTENCE_DIRECTORY_FOR_TARGET_APPLICATION_ON_SYSTEM)"
+}
+
+# --- 绑定函数（内部函数） ---
+
+_bind_wayland() {
+    if [ -n "$WAYLAND_DISPLAY" ]; then
+        local WAYLAND_SOCKET_PATH="/run/user/$UID/$WAYLAND_DISPLAY"
+        if [ -e "$WAYLAND_SOCKET_PATH" ]; then
+            echo "启用 Wayland 支持..."
+            BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind $WAYLAND_SOCKET_PATH $WAYLAND_SOCKET_PATH"
+            BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --setenv WAYLAND_DISPLAY $WAYLAND_DISPLAY"
+        fi
+    fi
+}
+
+_bind_x11_fallback() {
+    if [ -n "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
+        echo "启用 X11 支持..."
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind /tmp/.X11-unix /tmp/.X11-unix"
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --ro-bind $HOME/.Xauthority $HOME/.Xauthority" 
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --setenv DISPLAY $DISPLAY"
+    fi
+}
+
+_bind_audio() {
+    if [ -n "$PIPEWIRE_RUNTIME_DIR" ] && [ -d "$PIPEWIRE_RUNTIME_DIR" ]; then
+        if [ -d "/run/user/$UID/pipewire-0" ]; then
+            echo "启用 PipeWire 音频支持..."
+            BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind /run/user/$UID/pipewire-0 /run/user/$UID/pipewire-0"
+        fi
+        if [ -d "/run/user/$UID/pulse" ]; then
+            echo "启用 PulseAudio 兼容层支持..."
+            BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind /run/user/$UID/pulse /run/user/$UID/pulse"
+        fi
+    fi
+}
+
+_bind_vulkan() {
+    # 优先检查 Arch/Fedora 路径
+    local VULKAN_SHARE_DIR="/usr/share/vulkan"
+    # 其次检查 Debian/Ubuntu 路径
+    local VULKAN_ETC_DIR="/etc/vulkan"
+    
+    if [ -d "$VULKAN_SHARE_DIR" ]; then
+        echo "绑定 Vulkan 配置 (USR_SHARE 路径)..."
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --ro-bind $VULKAN_SHARE_DIR $VULKAN_SHARE_DIR"
+    elif [ -d "$VULKAN_ETC_DIR" ]; then
+        echo "绑定 Vulkan 配置 (ETC 路径)..."
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --ro-bind $VULKAN_ETC_DIR $VULKAN_ETC_DIR"
+    fi
+}
+
+_bind_devices() {
+    echo "绑定输入设备和 FUSE..."
+    BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --dev-bind /dev/input /dev/input"
+    BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --dev-bind /dev/fuse /dev/fuse"
+}
+
+_bind_dbus_and_aux() {
+    # D-Bus
+    BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind /run/user/$UID/bus /run/user/$UID/bus"
+
+    # AT-SPI
+    if [ -d "/run/user/$UID/at-spi" ]; then
+        echo "启用 AT-SPI (辅助功能) 支持..."
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind /run/user/$UID/at-spi /run/user/$UID/at-spi"
+    fi
+
+    # GVFS
+    if [ -d "/run/user/$UID/gvfs" ]; then
+        echo "启用 GVFS 支持..."
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind /run/user/$UID/gvfs /run/user/$UID/gvfs"
+    fi
+}
+
+_bind_fonts() {
+    echo "绑定系统和用户自定义字体..."
+    BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --ro-bind /etc/fonts /etc/fonts"
+    BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --ro-bind /usr/share/fonts /usr/share/fonts" 
+    if [ -d "/usr/local/share/fonts" ]; then
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --ro-bind /usr/local/share/fonts /usr/local/share/fonts" 
+    fi
+    if [ -d "$HOME/.local/share/fonts" ]; then
+        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --ro-bind $HOME/.local/share/fonts $HOME/.local/share/fonts" 
+    fi
+}
+
+build_bwrap_gui_arguments() {
+    # ----------------------------------------------------
+    # -- 用户可注释/取消注释以下函数调用以快速定制沙箱 --
+    # ----------------------------------------------------
+    _bind_wayland
+    _bind_x11_fallback
+    _bind_audio
+    _bind_vulkan
+    _bind_devices
+    _bind_dbus_and_aux
+    _bind_fonts
+}
+
+execute_sandboxed_application() {
+    echo "正在沙箱内运行: $IDENTIFIER_FOR_TARGET_APPLICATION..."
+
+    local application_arguments=("${@:2}")
+    
+    # 使用数组构建参数
+    local bwrap_arguments=()
+
+    # 1. 基础隔离
+    bwrap_arguments+=(
+        --unshare-all
+        --share-net
+        --die-with-parent
+        --proc /proc
+        --dev /dev
+        --tmpfs /tmp
+        --tmpfs /run
+    )
+    
+    # 2. 系统目录
+    bwrap_arguments+=(
+        --ro-bind /usr /usr
+        --ro-bind /etc /etc
+        --ro-bind /lib /lib
+        --ro-bind /lib64 /lib64
+        --ro-bind /bin /bin
+        --ro-bind /sbin /sbin
+    )
+
+    # 3. GPU
+    bwrap_arguments+=(
+        --dev-bind /dev/dri /dev/dri
+    )
+
+    # 4. GUI/运行时 (展开变量)
+    # 注意: 这里不加引号以允许空格分割参数
+    bwrap_arguments+=( $BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS )
+    
+    # 5. 持久化和应用绑定
+    bwrap_arguments+=(
+        --bind "$PERSISTENCE_DIRECTORY_FOR_TARGET_APPLICATION_ON_SYSTEM" "$HOME_DIRECTORY_FOR_APPLICATION_INSIDE_SANDBOX" 
+        --ro-bind "$FULL_PATH_OF_BINARY_FILE_FOR_TARGET_APPLICATION_ON_SYSTEM" "$HOME_DIRECTORY_FOR_APPLICATION_INSIDE_SANDBOX/$IDENTIFIER_FOR_TARGET_APPLICATION"
+    )
+    
+    # 6. 环境设置
+    bwrap_arguments+=(
+        --chdir "$HOME_DIRECTORY_FOR_APPLICATION_INSIDE_SANDBOX" 
+        --setenv HOME "$HOME_DIRECTORY_FOR_APPLICATION_INSIDE_SANDBOX" 
+        --setenv PATH "$VALUE_OF_PATH_ENVIRONMENT_VARIABLE_IN_SANDBOX"
+    )
+
+    # 执行
+    bwrap "${bwrap_arguments[@]}" \
+        -- "$HOME_DIRECTORY_FOR_APPLICATION_INSIDE_SANDBOX/$IDENTIFIER_FOR_TARGET_APPLICATION" "${application_arguments[@]}"
+}
+
+# --- 4. 脚本主入口 (Main Entry) ---
+
+# 4.1. 初始化上下文
+initialize_context_and_paths "$@"
+
+# 4.2. 构建绑定参数
+build_bwrap_gui_arguments
+
+# 4.3. 执行应用
+execute_sandboxed_application "$@"
