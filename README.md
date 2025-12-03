@@ -2,20 +2,27 @@
 - 该项目用于备份我的 Arch Linux 的常用配置文件。
 - 主要用于 Wayland 环境。
 
+#### 屏幕截图：Niri
+![Niri](./shots/niri.png "Niri")
+![Launcher](./shots/launcher.png "Launcher")
+![ClipBoard](./shots/clipboard.png "ClipBoard")
+![Power-Menu](./shots/power-menu.png "Power-Menu")
+
 #### ~~.profile 文件~~
 - ~~该文件为环境变量，可将该文件放在 `$HOME` 目录下。~~
 - 环境变量改为：
   - shell 中的环境变量统一放入 fish 配置文件中：`~/.config/fish/config.fish`
   - 图形界面所需的额外环境变量放入对应 DE/WM 的配置文件中。例如：
     - Hyprland 的，放入： `~/.config/hypr/conf/environment.conf`
-    - Gnome 的，放入：`~/.confi/environment.d/*.conf`
+    - niri 的，放入： `/home/elysia/.config/niri/config.kdl`
+    - Gnome(systemd) 的，放入：`~/.confi/environment.d/*.conf`
 
 
 #### .config 文件夹
 - 此文件夹对应 `$HOME/.config` 文件夹，内含各软件的配置文件。
 
 #### .local 文件夹
-- 此文件夹对应 `$HOME/.local` 文件夹，内含我自定义的 `.desktop` 文件。
+- 此文件夹对应 `$HOME/.local` 文件夹，内含我自定义的 `.desktop` 文件、`shell 脚本` 以及 `二进制文件` 。
 
 #### 一点 pacman 小技巧
 - 如果一个包已经被作为依赖安装，你可以用以下命令将其转为手动安装
@@ -29,8 +36,7 @@ sudo pacman -D --asdeps <package_name>
 ```
 
 #### 个人的 hyprland 配置所需的依赖包
-
-```mtxt
+```txt
 # 基础包
 base                                    # Arch 基础包组
 base-devel	            		        # Arch 开发工具包组
@@ -61,7 +67,7 @@ terminus-font       			        # 提供 tty 下最大的 ter-132b 字体
 [archlinuxcn]/yay          	            # aur 助手
 
 # 文件管理
-Yazi	            			        # 终端文件管理器
+yazi	            			        # 终端文件管理器
 ├── file	            		        # 用于文件类型检测
 ├── ffmpeg			                    # 用于视频缩略图
 ├── 7zip	            		        # 用于档案提取和预览
@@ -80,6 +86,7 @@ Yazi	            			        # 终端文件管理器
 # 图形界面
 wayland			            	        # 显示管理器
 xorg-xwayland       			        # xorg 兼容
+xwayland-satellite     			        # Niri 使用的 xorg 兼容
 
 [字体]
 ├── [archlinuxcn]/ttf-noto-sans-vf                  # 无衬线西文字体（动态字重）

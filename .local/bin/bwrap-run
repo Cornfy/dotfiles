@@ -1,0 +1,96 @@
+#!/bin/bash
+
+# --- 1. 启动和路径解析 ---
+
+# 检查是否提供了要运行的命令
+if [ $# -eq 0 ]; then
+    echo "用法: $0 <命令> [参数...]"
+    echo "  例如: $0 /path/to/your_program"
+    exit 1
+fi
+
+# 获取要执行的命令的绝对路径 (主机路径)
+# realpath -z0 避免了将所有参数视为一个路径
+CMD_FULL_PATH=$(realpath -e "$1" 2>/dev/null)
+if [ -z "$CMD_FULL_PATH" ]; then
+    # 如果不是文件路径，可能是系统命令 (如'vim', 'curl')
+    CMD_FULL_PATH=$(which "$1" 2>/dev/null)
+fi
+
+if [ -z "$CMD_FULL_PATH" ]; then
+    echo "错误：无法找到可执行文件 '$1' 的完整路径。"
+    exit 1
+fi
+
+# 提取命令的文件名作为沙箱内的执行名，例如 GUI.for.SingBox
+CMD_NAME=$(basename "$CMD_FULL_PATH")
+
+# --- 2. 持久化数据和 App ID 逻辑 ---
+
+# 自动生成 App ID：使用命令的文件名作为 App ID
+APP_ID="$CMD_NAME" 
+# 宿主路径：持久化数据将存储在 ~/sandbox_data/<APP_ID>
+SANDBOX_DATA_HOST="$HOME/sandbox_data/$APP_ID"
+# 沙箱路径：程序在沙箱内看到的 HOME 目录和数据目录
+SANDBOX_DATA_GUEST="/home/app"
+
+# 检查并创建宿主数据目录
+if [ ! -d "$SANDBOX_DATA_HOST" ]; then
+    echo "宿主数据目录 '$SANDBOX_DATA_HOST' 不存在，正在创建..."
+    mkdir -p "$SANDBOX_DATA_HOST" || { echo "错误: 无法创建数据目录"; exit 1; }
+fi
+echo "使用沙箱路径: /home/app (主机路径: $SANDBOX_DATA_HOST)"
+
+
+# --- 3. 可选 GUI 绑定和环境变量 ---
+
+GUI_BINDS=""
+
+# Wayland 支持
+if [ -n "$WAYLAND_DISPLAY" ]; then
+    WAYLAND_SOCKET_PATH="/run/user/$UID/$WAYLAND_DISPLAY"
+    if [ -e "$WAYLAND_SOCKET_PATH" ]; then
+        echo "启用 Wayland 支持..."
+        GUI_BINDS+=" --bind $WAYLAND_SOCKET_PATH $WAYLAND_SOCKET_PATH"
+        GUI_BINDS+=" --setenv WAYLAND_DISPLAY $WAYLAND_DISPLAY"
+    fi
+fi
+
+## X11 支持 (作为 Fallback)
+#if [ -n "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
+#    echo "启用 X11 支持..."
+#    GUI_BINDS+=" --bind /tmp/.X11-unix /tmp/.X11-unix"
+#    GUI_BINDS+=" --ro-bind $HOME/.Xauthority $HOME/.Xauthority"
+#    GUI_BINDS+=" --setenv DISPLAY $DISPLAY"
+#fi
+
+# 通用 GUI 依赖 (D-Bus 和字体)
+GUI_BINDS+=" --bind /run/user/$UID/bus /run/user/$UID/bus"
+GUI_BINDS+=" --ro-bind /etc/fonts /etc/fonts"
+
+# --- 4. 核心 bwrap 命令 ---
+
+echo "正在沙箱内运行: $CMD_NAME..."
+
+bwrap \
+    --unshare-all \
+    --share-net \
+    --die-with-parent \
+    --proc /proc \
+    --dev /dev \
+    --tmpfs /tmp \
+    --tmpfs /run \
+    --ro-bind /usr /usr \
+    --ro-bind /etc /etc \
+    --ro-bind /lib /lib \
+    --ro-bind /lib64 /lib64 \
+    --ro-bind /bin /bin \
+    --ro-bind /sbin /sbin \
+    --dev-bind /dev/dri /dev/dri \
+    $GUI_BINDS \
+    --bind "$SANDBOX_DATA_HOST" "$SANDBOX_DATA_GUEST" \
+    --ro-bind "$CMD_FULL_PATH" "$SANDBOX_DATA_GUEST/$CMD_NAME" \
+    --chdir "$SANDBOX_DATA_GUEST" \
+    --setenv HOME "$SANDBOX_DATA_GUEST" \
+    --setenv PATH "/usr/local/bin:/usr/bin:/bin" \
+    -- "$SANDBOX_DATA_GUEST/$CMD_NAME" "${@:2}"
