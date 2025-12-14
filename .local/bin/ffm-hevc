@@ -1,44 +1,312 @@
 #!/bin/bash
-# convert_to_hevc.sh
-# 使用 VAAPI 将 H.264 视频转 HEVC
+# 脚本名称: ffm-hevc
+# 脚本描述: 智能视频转码脚本。自动计算BPP并校准画质，支持硬件/软件编码。
+# 工作方式：使用高效的编码方案控制体积，同时尽量保证输出视频的“观感”不比原视频更差。
+#
+# 需要安装 bc 进行数学计算
 
-# 检查输入参数
+# --- 配置参数 ---
+BPP_LOW_THRESHOLD="0.07"
+BPP_HIGH_THRESHOLD="0.15"
+
+# 基础 H.264 锚点 (用于计算参考值)
+CRF_EQ_LOW="28"   # 低 BPP 对应 H.264 基准 (低画质)
+CRF_EQ_MID="23"   # 中 BPP 对应 H.264 基准
+CRF_EQ_HIGH="18"  # 高 BPP 对应 H.264 基准 (高画质)
+
+# --- 边界限制配置 (新增) ---
+# 当计算出的值超出此范围时，强制使用边界值
+# 作用：18 保证体积不爆炸，28 保证画质不崩坏
+SW_CRF_MIN="18"
+SW_CRF_MAX="28"
+HW_QP_MIN="18"
+HW_QP_MAX="28"
+
+# 硬件加速配置
+HW_ACCEL_MODE="vaapi"
+HW_ACCEL_DEVICE="/dev/dri/renderD128"
+HW_QP_OFFSET="+4"
+
+# C. 目标编码器查找表 (CRF/QP 偏移量相对于 H.264 CRF=0)
+# 格式: TARGET_NAME|CRF_OFFSET_H264|FFMPEG_ENCODER|PRESET_REC|MODE
+CRF_TARGET_MAP=(
+    "HEVC_SW|+6|libx265|medium|CRF"
+    "AV1_SW |+9|libsvtav1|6|CRF"
+    "HEVC_HW|+4|hevc_vaapi|speed|HW" 
+)
+
+# D. 输入编码器 (SOURCE) 偏移量查找表 (效率参数)
+# 格式: CODEC_NAME|CRF_OFFSET_H264
+CRF_SOURCE_MAP=(
+    "h264|0"
+    "hevc|-6" 
+    "vp9|-5"
+    "av1|-9" 
+)
+
+# --- 检查和输入解析 ---
 if [ "$#" -ne 2 ]; then
-    echo "用法: $0 输入文件 输出文件"
+    echo "用法: $0 <输入文件> <输出文件>"
     exit 1
 fi
 
 INPUT="$1"
 OUTPUT="$2"
 
-# 检查输入文件是否存在
 if [ ! -f "$INPUT" ]; then
     echo "错误: 输入文件 '$INPUT' 不存在"
     exit 1
 fi
 
-# 显示输入视频信息（可选）
-echo "正在处理视频：$INPUT"
-ffmpeg -i "$INPUT" 2>&1 | grep -E "Stream|fps"
-echo ""
-
-# 执行 ffmpeg 转码
-ffmpeg -hide_banner \
-    -hwaccel vaapi -vaapi_device /dev/dri/renderD128 \
-    -i "$INPUT" \
-    -vf "format=nv12,hwupload" \
-    -c:v hevc_vaapi -rc_mode 4 -qp 18 \
-    -c:a copy \
-    "$OUTPUT"
-
-# 提示完成
-if [ $? -eq 0 ]; then
-    echo "转码完成: $OUTPUT"
-    # 显示输入视频信息（可选）
-    echo ""
-    echo "处理完的视频：$OUTPUT"
-    ffmpeg -i "$OUTPUT" 2>&1 | grep -E "Stream|fps"
-else
-    echo "转码失败"
+if ! command -v ffprobe &> /dev/null || ! command -v bc &> /dev/null || ! command -v ffmpeg &> /dev/null; then
+    echo "错误: 需要安装 ffprobe, bc, 和 ffmpeg。"
+    exit 1
 fi
 
+# 1. 使用 ffprobe 提取关键信息
+PROBE_INFO=$(ffprobe -v error -select_streams v:0 -show_entries stream=bit_rate,width,height,avg_frame_rate,codec_name -of default=noprint_wrappers=1 "$INPUT")
+CONTAINER_BITRATE=$(ffprobe -v error -show_entries format=bit_rate -of default=noprint_wrappers=1 "$INPUT" | awk -F'=' '/bit_rate/{print $2}')
+
+# 解析函数
+getValue() {
+    echo "$PROBE_INFO" | awk -F'=' "/^$1/{print \$2; exit}"
+}
+
+R_AVC_BPS=$(getValue bit_rate)
+WIDTH=$(getValue width)
+HEIGHT=$(getValue height)
+FRAME_RATE_STR=$(getValue avg_frame_rate)
+CODEC_NAME=$(getValue codec_name)
+
+# 确保 CODEC_NAME 存在且统一为小写
+if [ -z "$CODEC_NAME" ]; then
+    echo "错误: 无法获取视频流的编码格式 (codec_name)。"
+    exit 1
+fi
+CODEC_NAME=$(echo "$CODEC_NAME" | tr '[:upper:]' '[:lower:]')
+
+# --- 变量健壮性修复 ---
+# 修复 R_AVC_BPS (比特率)
+if [ -z "$R_AVC_BPS" ] || [ "$R_AVC_BPS" -eq 0 ]; then
+    R_AVC_BPS=$CONTAINER_BITRATE 
+    if [ -z "$R_AVC_BPS" ] || [ "$R_AVC_BPS" -eq 0 ]; then
+        echo "错误: 无法获取有效的视频或容器比特率。无法计算 BPP。"
+        exit 1
+    fi
+fi
+
+# 修复 FPS (帧率)
+if [[ "$FRAME_RATE_STR" == "0/0" ]] || [[ -z "$FRAME_RATE_STR" ]]; then
+    FPS_NUM=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of default=noprint_wrappers=1 "$INPUT" | awk -F'=' '/r_frame_rate/{print $2}' | awk -F'/' '{print $1}')
+    FPS_DEN=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of default=noprint_wrappers=1 "$INPUT" | awk -F'=' '/r_frame_rate/{print $2}' | awk -F'/' '{print $2}')
+    if [ -n "$FPS_NUM" ] && [ "$FPS_DEN" -ne 0 ]; then
+        FPS=$(echo "scale=3; $FPS_NUM / $FPS_DEN" | bc -l)
+    else
+        echo "警告: 无法获取帧率，默认使用 25 fps。" >&2
+        FPS="25"
+    fi
+else
+    FPS=$(echo "scale=3; $FRAME_RATE_STR" | bc -l)
+fi
+
+# 2. 计算 BPP_IN (Bits Per Pixel)
+if [ -z "$FPS" ] || [ -z "$WIDTH" ] || [ -z "$HEIGHT" ] || [ "$WIDTH" -eq 0 ] || [ "$HEIGHT" -eq 0 ]; then
+    echo "错误: 维度或帧率信息缺失。无法计算 BPP。"
+    exit 1
+fi
+
+TOTAL_PIXELS_FLOAT=$(echo "$WIDTH * $HEIGHT * $FPS" | bc)
+TOTAL_PIXELS=$(printf "%.0f\n" "$TOTAL_PIXELS_FLOAT") 
+if [ "$TOTAL_PIXELS" -eq 0 ]; then
+    echo "错误: 像素总量为零。TOTAL_PIXELS=$TOTAL_PIXELS"
+    exit 1
+fi
+BPP_IN=$(echo "scale=4; $R_AVC_BPS / $TOTAL_PIXELS" | bc -l)
+
+# 3. 查找输入编码器效率参数 (SOURCE_OFFSET)
+SOURCE_OFFSET=""
+SOURCE_OFFSET_FOUND=false
+for entry in "${CRF_SOURCE_MAP[@]}"; do
+    IFS='|' read -r source_name offset <<< "$entry"
+    if [[ "$CODEC_NAME" == *"$source_name"* ]]; then
+        SOURCE_OFFSET="$(echo "$offset" | tr -d ' ')"
+        SOURCE_OFFSET_FOUND=true
+        break
+    fi
+done
+
+if [ "$SOURCE_OFFSET_FOUND" == "false" ]; then
+    echo "错误: 脚本不支持输入编码格式 '$CODEC_NAME'。请在 CRF_SOURCE_MAP 中添加。"
+    exit 1
+fi
+
+# --- 核心质量估算和参数生成函数 (已增加边界控制) ---
+calculate_quality_param() {
+    local BPP_IN=$1
+    local SOURCE_OFFSET=$2
+    local HW_QP_OFFSET=$3
+    local TARGET_OFFSET=$4
+    local PRESET=$5
+    local MODE=$6
+    
+    local CRF_BASE=""
+    local CRF_EQ=""
+    local FINAL_QUALITY_PARAM=""
+    local QUALITY_VAL=""
+
+    # 1. 裸 BPP 映射到 H.264 基础 CRF (CRF_BASE)
+    if (( $(echo "$BPP_IN >= $BPP_HIGH_THRESHOLD" | bc -l) )); then
+        CRF_BASE=$CRF_EQ_HIGH
+    elif (( $(echo "$BPP_IN >= $BPP_LOW_THRESHOLD" | bc -l) )); then
+        CRF_BASE=$CRF_EQ_MID
+    else
+        CRF_BASE=$CRF_EQ_LOW
+    fi
+
+    # 2. 核心修正: CRF_EQ = CRF_BASE + SOURCE_OFFSET
+    CRF_EQ=$(echo "scale=0; $CRF_BASE $SOURCE_OFFSET" | bc)
+    CRF_EQ=${CRF_EQ%.*}
+    
+    # 锚点自身的保护范围 (H.264 基准)
+    if [ "$CRF_EQ" -lt 10 ]; then CRF_EQ=10; fi
+    if [ "$CRF_EQ" -gt 35 ]; then CRF_EQ=35; fi
+    
+    # 3. 生成最终转码参数并应用边界控制 (Clamping)
+    if [ "$MODE" == "CRF" ]; then
+        TARGET_CRF=$(echo "scale=0; $CRF_EQ $TARGET_OFFSET" | bc)
+        TARGET_CRF=${TARGET_CRF%.*}
+        
+        # 记录原始计算值用于显示 (可选)
+        local RAW_CRF=$TARGET_CRF
+
+        # === 强制边界控制 (软件模式) ===
+        if [ "$TARGET_CRF" -lt "$SW_CRF_MIN" ]; then TARGET_CRF=$SW_CRF_MIN; fi
+        if [ "$TARGET_CRF" -gt "$SW_CRF_MAX" ]; then TARGET_CRF=$SW_CRF_MAX; fi
+        # =============================
+
+        FINAL_QUALITY_PARAM="-crf $TARGET_CRF -preset $PRESET"
+        
+        # 优化提示信息
+        if [ "$RAW_CRF" -ne "$TARGET_CRF" ]; then
+            QUALITY_VAL="CRF $TARGET_CRF (计算值 $RAW_CRF 被边界 $SW_CRF_MIN-$SW_CRF_MAX 限制)" 
+        else
+            QUALITY_VAL="CRF $TARGET_CRF (基于锚点 $CRF_EQ)" 
+        fi
+        
+    elif [ "$MODE" == "HW" ]; then
+        TARGET_QP=$(echo "scale=0; $CRF_EQ $HW_QP_OFFSET" | bc) 
+        TARGET_QP=${TARGET_QP%.*} 
+
+        local RAW_QP=$TARGET_QP
+
+        # === 强制边界控制 (硬件模式) ===
+        if [ "$TARGET_QP" -lt "$HW_QP_MIN" ]; then TARGET_QP=$HW_QP_MIN; fi
+        if [ "$TARGET_QP" -gt "$HW_QP_MAX" ]; then TARGET_QP=$HW_QP_MAX; fi
+        # =============================
+        
+        FINAL_QUALITY_PARAM="-rc_mode 4 -qp $TARGET_QP -preset $PRESET" 
+        
+        if [ "$RAW_QP" -ne "$TARGET_QP" ]; then
+             QUALITY_VAL="QP $TARGET_QP (计算值 $RAW_QP 被边界 $HW_QP_MIN-$HW_QP_MAX 限制)"
+        else
+             QUALITY_VAL="QP $TARGET_QP (自适应 ICQ，基于锚点 $CRF_EQ)"
+        fi
+    fi
+    
+    echo "$FINAL_QUALITY_PARAM"
+    echo "$QUALITY_VAL"
+}
+
+# --- 用户交互和转码执行 ---
+
+echo "--- 质量估算 ---"
+echo "原始编码器: $CODEC_NAME | 原始 BPP: $BPP_IN | 效率修正: $SOURCE_OFFSET"
+echo "----------------"
+echo "请选择转码模式和目标编码器:"
+echo "1) 🚀 硬件 HEVC (hevc_vaapi - QP): 速度优先 (默认)"
+echo "2) ✨ 软件 HEVC (libx265 - CRF): 高画质，体积控制"
+echo "3) ⭐ 软件 AV1 (libsvtav1 - CRF): 最高压缩比，最佳画质"
+echo "----------------"
+read -r -p "请输入数字 (1/2/3，默认 1): " CHOICE
+
+if [ -z "$CHOICE" ]; then
+    CHOICE=1
+fi
+
+TARGET_NAME=""
+case $CHOICE in
+    1) TARGET_NAME="HEVC_HW";;
+    2) TARGET_NAME="HEVC_SW";;
+    3) TARGET_NAME="AV1_SW";;
+    *) echo "无效的选择。退出脚本。" ; exit 1 ;;
+esac
+
+# 查找目标编码器参数
+TARGET_OFFSET=""
+FFMPEG_ENCODER=""
+PRESET=""
+MODE=""
+for entry in "${CRF_TARGET_MAP[@]}"; do
+    IFS='|' read -r target_name offset encoder preset mode <<< "$entry"
+    if [[ "$(echo "$target_name" | tr -d ' ')" == "$(echo "$TARGET_NAME" | tr -d ' ')" ]]; then
+        TARGET_OFFSET="$(echo "$offset" | tr -d ' ')"
+        FFMPEG_ENCODER="$(echo "$encoder" | tr -d ' ')"
+        PRESET="$(echo "$preset" | tr -d ' ')"
+        MODE="$(echo "$mode" | tr -d ' ')"
+        break
+    fi
+done
+
+# 调用核心函数并捕获输出
+QUALITY_OUTPUT=$(calculate_quality_param "$BPP_IN" "$SOURCE_OFFSET" "$HW_QP_OFFSET" "$TARGET_OFFSET" "$PRESET" "$MODE")
+FINAL_QUALITY_PARAM=$(echo "$QUALITY_OUTPUT" | head -n 1)
+QUALITY_VAL=$(echo "$QUALITY_OUTPUT" | tail -n 1)
+
+# 打印信息摘要并等待确认
+echo "==================================================="
+echo "📊 转码摘要 - 请确认"
+echo "目标模式: $MODE ($TARGET_NAME)"
+echo "---------------------------------------------------"
+echo "目标编码器: $FFMPEG_ENCODER"
+echo "🚀 最终质量参数: $QUALITY_VAL"
+if [ "$MODE" == "HW" ]; then
+    echo "⚡ 硬件加速: 启用 (VA-API)，设备: $HW_ACCEL_DEVICE"
+else
+    echo "✨ 编码类型: 软件编码"
+fi
+echo "==================================================="
+read -r -p "是否继续执行转码？(Y/n): " CONFIRM
+if [[ "$CONFIRM" == "n" || "$CONFIRM" == "N" ]]; then
+    echo "转码已取消。"
+    exit 0
+fi
+
+# 执行 ffmpeg 转码
+if [ "$MODE" == "HW" ]; then
+    echo "开始纯硬件编码..."
+    ffmpeg -hide_banner \
+        -hwaccel $HW_ACCEL_MODE -vaapi_device $HW_ACCEL_DEVICE \
+        -i "$INPUT" \
+        -vf "format=nv12,hwupload" \
+        -c:v "$FFMPEG_ENCODER" $FINAL_QUALITY_PARAM \
+        -c:a copy \
+        "$OUTPUT"
+else
+    echo "开始软件 CRF 编码..."
+    ffmpeg -hide_banner \
+        -i "$INPUT" \
+        -c:v "$FFMPEG_ENCODER" $FINAL_QUALITY_PARAM \
+        -c:a copy \
+        "$OUTPUT"
+fi
+
+if [ $? -eq 0 ]; then
+    echo "---------------------------------------------------"
+    echo "🎉 编码完成！"
+    INPUT_SIZE=$(du -h "$INPUT" | awk '{print $1}')
+    OUTPUT_SIZE=$(du -h "$OUTPUT" | awk '{print $1}')
+    echo "原始: $INPUT_SIZE -> 目标: $OUTPUT_SIZE"
+    echo "==================================================="
+else
+    echo "❌ 编码失败。"
+fi

@@ -264,10 +264,9 @@ _bind_wayland() {
     fi
 }
 _bind_x11_fallback() {
-    if [ -n "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
+    if [ -n "$DISPLAY" ]; then
         echo "启用 X11 支持..."
         BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind /tmp/.X11-unix /tmp/.X11-unix"
-        BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --ro-bind $HOME/.Xauthority $HOME/.Xauthority" 
         BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --setenv DISPLAY $DISPLAY"
     fi
 }
@@ -329,8 +328,6 @@ execute_sandboxed_command() {
 
     local bwrap_arguments=()
     local host_command_path="$FULL_PATH_OF_COMMAND_ON_SYSTEM"
-    # 打印全局变量的值进行调试
-    echo "DEBUG: FULL_PATH_OF_COMMAND_ON_SYSTEM: $FULL_PATH_OF_COMMAND_ON_SYSTEM"
 
     # 基础隔离
     bwrap_arguments+=(
@@ -372,7 +369,6 @@ execute_sandboxed_command() {
 
     
     # B. 绑定本次要执行的命令 (仅当命令位于非核心系统路径或 Home 目录时才需额外绑定)
-    echo "DEBUG: host_command_path: $host_command_path"
     if [ -n "$host_command_path" ]; then
         if [[ "$host_command_path" == "$HOME"* ]]; then
             # 策略 A: Home 目录命令 - 在 HOME 覆盖层上只读绑定文件本身
