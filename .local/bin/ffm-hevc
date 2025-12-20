@@ -140,21 +140,22 @@ if [ "$SOURCE_OFFSET_FOUND" == "false" ]; then
     exit 1
 fi
 
-# --- 核心质量估算和参数生成函数 (已增加边界控制) ---
+# --- 核心质量估算和参数生成函数 ---
 calculate_quality_param() {
-    local BPP_IN=$1
-    local SOURCE_OFFSET=$2
-    local HW_QP_OFFSET=$3
-    local TARGET_OFFSET=$4
-    local PRESET=$5
-    local MODE=$6
+    # 清理输入变量，去除可能的空格
+    local BPP_IN=$(echo "$1" | tr -d ' ')
+    local SOURCE_OFFSET=$(echo "$2" | tr -d ' ')
+    local HW_QP_OFFSET=$(echo "$3" | tr -d ' ')
+    local TARGET_OFFSET=$(echo "$4" | tr -d ' ')
+    local PRESET="$5"
+    local MODE="$6"
     
-    local CRF_BASE=""
+    local CRF_BASE=23
     local CRF_EQ=""
     local FINAL_QUALITY_PARAM=""
     local QUALITY_VAL=""
 
-    # 1. 裸 BPP 映射到 H.264 基础 CRF (CRF_BASE)
+    # 1. 映射 BPP 到基础 CRF
     if (( $(echo "$BPP_IN >= $BPP_HIGH_THRESHOLD" | bc -l) )); then
         CRF_BASE=$CRF_EQ_HIGH
     elif (( $(echo "$BPP_IN >= $BPP_LOW_THRESHOLD" | bc -l) )); then
@@ -163,56 +164,52 @@ calculate_quality_param() {
         CRF_BASE=$CRF_EQ_LOW
     fi
 
-    # 2. 核心修正: CRF_EQ = CRF_BASE + SOURCE_OFFSET
-    CRF_EQ=$(echo "scale=0; $CRF_BASE $SOURCE_OFFSET" | bc)
-    CRF_EQ=${CRF_EQ%.*}
+    # 2. 计算 CRF_EQ (H.264 基准)
+    # 使用 a+b 语法，并确保 offset 即使带正负号也能正确解析
+    CRF_EQ_RAW=$(echo "$CRF_BASE + ($SOURCE_OFFSET)" | bc 2>/dev/null)
+    # 如果 bc 报错则回退到基础值
+    if [ -z "$CRF_EQ_RAW" ]; then CRF_EQ_RAW=$CRF_BASE; fi
+    CRF_EQ=$(printf "%.0f" "$CRF_EQ_RAW")
     
-    # 锚点自身的保护范围 (H.264 基准)
+    # 边界保护
     if [ "$CRF_EQ" -lt 10 ]; then CRF_EQ=10; fi
     if [ "$CRF_EQ" -gt 35 ]; then CRF_EQ=35; fi
     
-    # 3. 生成最终转码参数并应用边界控制 (Clamping)
+    # 3. 生成最终参数
     if [ "$MODE" == "CRF" ]; then
-        TARGET_CRF=$(echo "scale=0; $CRF_EQ $TARGET_OFFSET" | bc)
-        TARGET_CRF=${TARGET_CRF%.*}
+        TARGET_CRF_RAW=$(echo "$CRF_EQ + ($TARGET_OFFSET)" | bc 2>/dev/null)
+        [ -z "$TARGET_CRF_RAW" ] && TARGET_CRF_RAW=$CRF_EQ
+        TARGET_CRF=$(printf "%.0f" "$TARGET_CRF_RAW")
         
-        # 记录原始计算值用于显示 (可选)
         local RAW_CRF=$TARGET_CRF
-
-        # === 强制边界控制 (软件模式) ===
         if [ "$TARGET_CRF" -lt "$SW_CRF_MIN" ]; then TARGET_CRF=$SW_CRF_MIN; fi
         if [ "$TARGET_CRF" -gt "$SW_CRF_MAX" ]; then TARGET_CRF=$SW_CRF_MAX; fi
-        # =============================
 
         FINAL_QUALITY_PARAM="-crf $TARGET_CRF -preset $PRESET"
-        
-        # 优化提示信息
         if [ "$RAW_CRF" -ne "$TARGET_CRF" ]; then
-            QUALITY_VAL="CRF $TARGET_CRF (计算值 $RAW_CRF 被边界 $SW_CRF_MIN-$SW_CRF_MAX 限制)" 
+            QUALITY_VAL="CRF $TARGET_CRF (计算值 $RAW_CRF 被边界限制)" 
         else
             QUALITY_VAL="CRF $TARGET_CRF (基于锚点 $CRF_EQ)" 
         fi
         
     elif [ "$MODE" == "HW" ]; then
-        TARGET_QP=$(echo "scale=0; $CRF_EQ $HW_QP_OFFSET" | bc) 
-        TARGET_QP=${TARGET_QP%.*} 
+        TARGET_QP_RAW=$(echo "$CRF_EQ + ($HW_QP_OFFSET)" | bc 2>/dev/null)
+        [ -z "$TARGET_QP_RAW" ] && TARGET_QP_RAW=$CRF_EQ
+        TARGET_QP=$(printf "%.0f" "$TARGET_QP_RAW")
 
         local RAW_QP=$TARGET_QP
-
-        # === 强制边界控制 (硬件模式) ===
         if [ "$TARGET_QP" -lt "$HW_QP_MIN" ]; then TARGET_QP=$HW_QP_MIN; fi
         if [ "$TARGET_QP" -gt "$HW_QP_MAX" ]; then TARGET_QP=$HW_QP_MAX; fi
-        # =============================
         
         FINAL_QUALITY_PARAM="-rc_mode 4 -qp $TARGET_QP -preset $PRESET" 
-        
         if [ "$RAW_QP" -ne "$TARGET_QP" ]; then
-             QUALITY_VAL="QP $TARGET_QP (计算值 $RAW_QP 被边界 $HW_QP_MIN-$HW_QP_MAX 限制)"
+             QUALITY_VAL="QP $TARGET_QP (计算值 $RAW_QP 被边界限制)"
         else
              QUALITY_VAL="QP $TARGET_QP (自适应 ICQ，基于锚点 $CRF_EQ)"
         fi
     fi
     
+    # 输出结果供外部捕获
     echo "$FINAL_QUALITY_PARAM"
     echo "$QUALITY_VAL"
 }
