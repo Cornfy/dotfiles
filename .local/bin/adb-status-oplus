@@ -1,0 +1,47 @@
+#!/bin/bash
+
+NODE="/sys/class/oplus_chg/battery/mmi_charging_enable"
+BLUE='\033[0;34m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; GREEN='\033[0;32m'; NC='\033[0m'
+
+clear
+
+while true; do
+    # 抓取数据块
+    DATA=$(adb shell "dumpsys battery")
+    
+    # 使用 ^\s+ 来匹配行首有空格的项，精确锁定 Battery Service 区块
+    LEVEL=$(echo "$DATA" | grep -P "^\s+level:" | grep -oP '\d+')
+    VOLT=$(echo "$DATA" | grep -P "^\s+voltage:" | grep -oP '\d+')
+    TEMP_RAW=$(echo "$DATA" | grep -P "^\s+temperature:" | grep -oP '\d+')
+    TEMP=$(echo "scale=1; $TEMP_RAW / 10" | bc)
+    STATUS_CODE=$(echo "$DATA" | grep -P "^\s+status:" | grep -oP '\d+') 
+    # 实时电流通常只在 OPLUS 区块出现，保留原有匹配
+    CURRENT=$(echo "$DATA" | grep "Battery current :" | grep -oP '[-0-9]+' | head -n 1)
+
+    # 清屏并输出
+    echo -ne "\033[0;0H\033[J"
+    echo -e "${BLUE}    OnePlus Power Monitor (Stable)    ${NC}"
+    echo -e "${BLUE}==========================================${NC}"
+    case $STATUS_CODE in
+        2) ST_TEXT="${GREEN}正在充电${NC}" ;;
+        3) ST_TEXT="${RED}正在放电${NC}" ;;
+        4) ST_TEXT="${BLUE}停止充电（旁路供电）${NC}" ;;
+        5) ST_TEXT="${GREEN}已满电${NC}" ;;
+        *) ST_TEXT="未知" ;;
+    esac
+    echo -e "  系统状态: $ST_TEXT"
+    echo -e "  当前电量: ${YELLOW}$LEVEL %${NC}"
+    echo -e "  电池温度: ${BLUE}$TEMP °C${NC}"
+    echo -e "${BLUE}------------------------------------------${NC}"
+    # 基于实测：正数 = 手机正在消耗外部/电池电量
+    if [ "${CURRENT:-0}" -ge 0 ]; then
+        echo -e "  电流: ${RED}+${CURRENT} mA${NC}"
+    elif [ "${CURRENT:-0}" -lt -0 ]; then
+        echo -e "  电流: ${GREEN}${CURRENT} mA${NC}"
+    fi
+    echo -e "  电压: ${YELLOW}${VOLT} mV${NC}"
+    echo -e "${BLUE}==========================================${NC}"
+    echo -e "按 Ctrl+C 结束监控"
+    sleep 1
+done
+

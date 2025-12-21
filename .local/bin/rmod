@@ -7,7 +7,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-target="$1"
+target=$(realpath "$1")
 
 # 检查目标是否存在
 if [ ! -e "$target" ]; then
