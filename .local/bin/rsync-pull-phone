@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# --- 配置区 ---
+REMOTE="root@oneplus12"
+REMOTE_PATH="/storage/emulated/0/"
+LOCAL_PATH="$HOME/Mobile_Phone_Rsync/"
+SSH_PORT="22"
+
+# 确保本地目录存在
+mkdir -p "$LOCAL_PATH"
+
+echo "📥 开始从手机[拉取]增量同步..."
+
+rsync -ahuP \
+    --exclude="Android/" \
+    --exclude=".thumbnails/" \
+    --exclude=".trashed-*" \
+    --exclude="cache/" \
+    --exclude=".git/" \
+    --exclude=".DS_Store" \
+    -e "ssh -p $SSH_PORT" \
+    $REMOTE:$REMOTE_PATH \
+    $LOCAL_PATH
+
+if [ $? -eq 0 ]; then
+    echo "✅ 同步完成！文件归属于: $(whoami)"
+else
+    echo "❌ 同步过程中出现错误。"
+fi
