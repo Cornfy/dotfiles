@@ -271,7 +271,7 @@ _bind_x11_fallback() {
     fi
 }
 _bind_audio() {
-    if [ -n "$PIPEWIRE_RUNTIME_DIR" ] && [ -d "$PIPEWIRE_RUNTIME_DIR" ]; then
+    if [ -n "$XDG_RUNTIME_DIR" ] && [ -d "$XDG_RUNTIME_DIR" ]; then
         if [ -d "/run/user/$UID/pipewire-0" ]; then
             echo "启用 PipeWire 音频支持..."
             BWRAP_ARGUMENTS_FOR_GUI_AND_RUNTIME_BINDINGS+=" --bind /run/user/$UID/pipewire-0 /run/user/$UID/pipewire-0"

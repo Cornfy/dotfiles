@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# --- 配置区 ---
+REMOTE="root@oneplus12"
+REMOTE_PATH="/storage/emulated/0/"
+LOCAL_PATH="$HOME/Mobile_Phone_Rsync/"
+SSH_PORT="22"
+
+echo "🚀 Step 1: 开始向手机 [推送] 增量同步..."
+
+if [ ! -d "$LOCAL_PATH" ]; then
+    echo "待推动的目录不存在: $LOCAL_PATH"
+    exit 1
+fi
+
+# 执行 rsync 同步
+# -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
+rsync -ahuP \
+	--no-p --no-o --no-g -t --omit-dir-times \
+	--exclude="Android/" \
+	--exclude=".thumbnails/" \
+	--exclude=".trashed-*" \
+	--exclude=".recycle" \
+	--exclude="cache/" \
+	--exclude=".git/" \
+	--exclude=".DS_Store" \
+	-e "ssh -p $SSH_PORT" \
+	"$LOCAL_PATH" \
+	"$REMOTE:$REMOTE_PATH"
+
+if [ $? -ne 0 ]; then
+    echo "❌ 同步过程中出现错误。"
+    exit 1
+fi
+echo "✅ 同步完成！"
+
+echo "🔄 Step 2: 正在通知手机刷新媒体库..."
+
+# 将命令通过标准输入传递给远程手机
+ssh -p "$SSH_PORT" "$REMOTE" "REMOTE_PATH=\"$REMOTE_PATH\" PATH=\$PATH:/system/bin sh -s" << 'EOF'
+am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file://$REMOTE_PATH" > /dev/null
+if [ $? -ne 0 ]; then
+    echo "❌ 手机端刷新媒体库过程中出现错误。"
+    exit 1
+fi
+echo "✅ 手机端刷新处理完毕"
+EOF
+
+echo "✨ 任务结束。"
