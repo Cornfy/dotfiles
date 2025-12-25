@@ -154,7 +154,7 @@ window-rule {
 }
 window-rule {
     match is-active=true
-    opacity 0.9
+    opacity 0.95
 }
 // Open the Firefox picture-in-picture player as floating by default.
 window-rule {
@@ -163,6 +163,10 @@ window-rule {
     // - Flatpak Firefox (app-id is "org.mozilla.firefox")
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"
     open-floating true
+}
+window-rule {
+    match app-id="pitfall.exe"
+    opacity 1.0
 }
 
 binds {

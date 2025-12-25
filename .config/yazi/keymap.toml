@@ -32,7 +32,15 @@ desc = "copy to the system clipboard (for wayland)"
 [[mgr.prepend_keymap]]
 on  = [ "M", "P" ]
 run = "plugin mount"
-desc = "partition mounts: [m]ount [u]nmount [e]ject [q]uit"
+desc = "Partition Manager: [m]ount [u]mount [e]ject [q]uit"
+
+
+# -----------------------------------------------------
+# plugin - mtp
+[[mgr.prepend_keymap]]
+on   = [ "M", "M" ]
+run  = "plugin mtp"
+desc = "MTP Devices Manager: [m]ount [u]mount [q]uit"
 
 
 # -----------------------------------------------------

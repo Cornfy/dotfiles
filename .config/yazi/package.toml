@@ -1,27 +1,27 @@
 [[plugin.deps]]
 use = "yazi-rs/plugins:piper"
-rev = "d1c8baa"
-hash = "a20327710c3a8d37ee0972128dcb6a31"
+rev = "19dc890"
+hash = "b26d542e75151835d7bc885f6dda74cb"
 
 [[plugin.deps]]
 use = "boydaihungst/mediainfo"
-rev = "2093ab7"
-hash = "16a10359fc2a3cd8cc8bcfbe00f744d3"
+rev = "af8bdf4"
+hash = "43fa632820cc91919c4e713652140b48"
 
 [[plugin.deps]]
 use = "ndtoan96/ouch"
-rev = "0742fff"
-hash = "2bd799b42b8e42b8ef100310be71f8d1"
+rev = "cfb9140"
+hash = "b5067143415bd2d46c0dfa57319ddcef"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:smart-enter"
-rev = "d1c8baa"
+rev = "19dc890"
 hash = "56fdabc96fc1f4d53c96eb884b02a5be"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:chmod"
-rev = "d1c8baa"
-hash = "8ad3e90b079190b4905f24a44f4ca06b"
+rev = "19dc890"
+hash = "5b2eb0cc2050cec1e4de83cfa51a5b90"
 
 [[plugin.deps]]
 use = "KKV9/compress"
@@ -35,8 +35,8 @@ hash = "6b8e5d6b09626facec713923d3ddb54b"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:mount"
-rev = "d1c8baa"
-hash = "435a2af56ecfb3d05755fd5e24977d8b"
+rev = "19dc890"
+hash = "4fccaaf10c36dc2466e2438a386ff017"
 
 [flavor]
 deps = []
