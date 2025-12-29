@@ -29,3 +29,5 @@ bind \cf ff-insert
 # yazi here
 bind \cy y
 
+# lazygit here
+bind \cg lazygit
