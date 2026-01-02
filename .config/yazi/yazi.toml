@@ -94,11 +94,11 @@ ratio = [1, 4, 5]
 
 	prepend_previewers = [
 		# Preview directory tree with eza
-		{ name = "*/", run  = 'piper -- eza -TL=2 --color=always --icons=always --group-directories-first --no-quotes "$1"' },
-	
+		{ url = "*/", run = 'piper -- eza -TL=2 --color=always --icons=always --group-directories-first --no-quotes "$1"' },
+    
 		# Preview markdown with glow
-		{ name = "*.md", run  = 'piper -- CLICOLOR_FORCE=1 glow -s=dark "$1"' },
-	
+		{ mime = "*.md", run  = 'piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"' },
+
 		# Replace magick, image, video with mediainfo
 		{ mime = "{audio,video,image}/*", run = "mediainfo"},
 		{ mime = "application/subrip", run = "mediainfo" },

@@ -16,7 +16,7 @@ fi
 # 执行 rsync 同步
 # -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
 rsync -ahuP \
-	--no-p --no-o --no-g -t --omit-dir-times \
+	--no-p --no-o --no-g --omit-dir-times \
 	--exclude="Android/" \
 	--exclude=".thumbnails/" \
 	--exclude=".trashed-*" \

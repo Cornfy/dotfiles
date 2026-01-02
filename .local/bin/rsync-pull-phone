@@ -11,7 +11,10 @@ mkdir -p "$LOCAL_PATH"
 
 echo "📥 开始从手机[拉取]增量同步..."
 
+# 执行 rsync 同步
+# -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
 rsync -ahuP \
+	--no-p --no-g --no-o --chmod=D755,F644 \
 	--exclude="Android/" \
 	--exclude=".thumbnails/" \
 	--exclude=".trashed-*" \
@@ -24,6 +27,10 @@ rsync -ahuP \
 	$LOCAL_PATH
 
 if [ $? -eq 0 ]; then
+    # 如有需要，手动处理权限
+    # find "$LOCAL_PATH" -type d -exec chmod 755 {} +
+    # find "$LOCAL_PATH" -type f -exec chmod 644 {} +
+    # chmod -R g-s "$LOCAL_PATH"
     echo "✅ 同步完成！文件归属于: $(whoami)"
 else
     echo "❌ 同步过程中出现错误。"
