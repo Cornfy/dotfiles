@@ -348,7 +348,7 @@ sudo pacman -S nvidia-open-dkms nvidia-utils lib32-nvidia-utils
 
 
 # NV110 ~ NV190
-sudo pacman -S nvidia-dkms nvidia-utils lib32-nvidia-utils
+yay -S nvidia-580xx-dkms nvidia-580xx-utils lib32-nvidia-580xx-utils
 # NV110 具体指：
     # GeForce 700
     # GeForce 900
