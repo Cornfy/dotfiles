@@ -15,14 +15,16 @@ if mountpoint -q "$MOUNT_POINT"; then
     exit 0
 fi
 
-echo "📂 正在挂载手机存储 (root@oneplus12)..."
+echo "📂 正在挂载手机存储 ($REMOTE)..."
 
 # 执行挂载
 # -o idmap=user: 把远程 root 映射为当前本地用户
 # -o allow_other: 允许本地非 root 用户访问该挂载点
 sshfs $REMOTE:$REMOTE_PATH $MOUNT_POINT \
     -p $SSH_PORT \
-    -o kernel_cache,auto_cache,reconnect \
+    -o kernel_cache \
+    -o auto_cache \
+    -o reconnect \
     -o compression=no \
     -o ServerAliveInterval=15 \
     -o ServerAliveCountMax=3
@@ -31,5 +33,5 @@ if [ $? -eq 0 ]; then
     echo "✅ 挂载成功！"
     echo "🔗 路径: $MOUNT_POINT"
 else
-    echo "❌ 挂载失败。提示：如果报错 'allow_other'，请检查下方的说明。"
+    echo "❌ 挂载失败。"
 fi

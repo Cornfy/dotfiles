@@ -131,19 +131,32 @@ mount -o noauto,nofail,x-systemd.automount /dev/sdb1 /mnt/boot/efi_windows
 mount -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@home /dev/sda2 /mnt/home
 
 
-# 挂载其他子卷，并停用压缩、写时复制（CoW）
-mount -o noatime,nodatacow,compress=no,ssd,space_cache=v2,subvol=@var_log /dev/sda2 /mnt/var/log
-mount -o noatime,nodatacow,compress=no,ssd,space_cache=v2,subvol=@var_cache /dev/sda2 /mnt/var/cache
-mount -o noatime,nodatacow,compress=no,ssd,space_cache=v2,subvol=@var_lib_docker /dev/sda2 /mnt/var/lib/docker
-mount -o noatime,nodatacow,compress=no,ssd,space_cache=v2,subvol=@swap /dev/sda2 /mnt/swap
+# 挂载其他子卷
+#################################################################################################
+# 根据 btrfs man - MOUNT_OPTIONS：
+# "在单个文件系统中，无法将某些子卷挂载为 nodatacow ，而将其他子卷挂载为 datacow 。
+# 第一个已挂载的子卷的挂载选项适用于任何其他子卷。”
+#
+# - 有透明压缩，我们实际上不用担心/var/{log,cache} 目录中，由于碎片整理带来的额外写放大。
+# - 而对于 /var/lib/docker 目录，也不建议直接禁用对应子卷的 CoW ，而是建议对大型数据库项目，
+#   单独指定数据库存放到外部路径，并手动对该路径执行 chattr +C（禁用 CoW ）
+#
+# 总之：
+# 1. 不要信任 nodatacow 挂载参数；
+# 2. 你可以全盘开启透明压缩（zstd）和写时复制（CoW），利大于弊；
+# 3. 对大型数据库，手动执行 chattr + C 即可。
+###################################################################################################
+mount -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@var_log /dev/sda2 /mnt/var/log
+mount -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@var_cache /dev/sda2 /mnt/var/cache
+mount -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@var_lib_docker /dev/sda2 /mnt/var/lib/docker
+mount -o noatime,compress=zstd:3,ssd,space_cache=v2,subvol=@swap /dev/sda2 /mnt/swap
 
 
 # 创建 swapfile
 btrfs filesystem mkswapfile --size 8G --uuid clear /mnt/swap/swapfile
 	# 如需休眠功能，一般建议 swap 的大小 >= 物理内存大小
 	# 内存大小可用 free -h 查看
-	# btrfs 中的 swapfile 必须禁用加密和写时复制
-	# （我们挂载 @swap 子卷时已经禁用了，这里用 btrfs 内部命令创建 swapfile 也会自动禁用）
+	# btrfs 中的 swapfile 必须禁用加密和写时复制（这里用 btrfs 内部命令创建 swapfile 会自动禁用）
 	# 正常创建 swap 分区是使用 mkswap 命令
 
 # 启用 swapfile
@@ -249,13 +262,13 @@ UUID=xxxx-xxxx      	/boot/efi_windows	vfat      	ro,relatime,fmask=0077,dmask=0
 UUID=xxxx-xxxx	/home     	btrfs     	rw,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@home	0 0
 
 # /dev/sda2 LABEL=var_log
-UUID=xxxx-xxxx	/var/log  	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_log	0 0
+UUID=xxxx-xxxx	/var/log  	btrfs     	rw,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@var_log	0 0
 
 # /dev/sda2 LABEL=var_cache
-UUID=xxxx-xxxx	/var/cache	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_cache	0 0
+UUID=xxxx-xxxx	/var/cache	btrfs     	rw,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@var_cache	0 0
 
 # /dev/sda2 LABEL=var_lib_docker
-UUID=xxxx-xxxx	/var/lib/docker	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@var_lib_docker	0 0
+UUID=xxxx-xxxx	/var/lib/docker	btrfs     	rw,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@var_lib_docker	0 0
 
 # /dev/nvme0n1p2 LABEL=windows_c
 UUID=xxxx-xxxx      	/mnt/Windows_C	ntfs3      	rw,relatime,fmask=0022,dmask=0022,nofail,uid=1000,gid=1000,iocharset=utf8	0 0
@@ -264,7 +277,7 @@ UUID=xxxx-xxxx      	/mnt/Windows_C	ntfs3      	rw,relatime,fmask=0022,dmask=002
 UUID=xxxx-xxxx      	/mnt/Windows_D	ntfs3      	rw,relatime,fmask=0022,dmask=0022,nofail,uid=1000,gid=1000,iocharset=utf8	0 0
 
 # /dev/sda2 LABEL=swap
-UUID=xxxx-xxxx	/swap     	btrfs     	rw,noatime,nodatacow,compress=no,ssd,discard=async,space_cache=v2,subvol=/@swap	0 0
+UUID=xxxx-xxxx	/swap     	btrfs     	rw,noatime,compress=zstd:3,ssd,discard=async,space_cache=v2,subvol=/@swap	0 0
 
 /swap/swapfile      	none      	swap      	defaults  	0 0
 
