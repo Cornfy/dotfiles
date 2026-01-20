@@ -1,37 +1,131 @@
 #!/bin/bash
 
-# --- 配置区 ---
-REMOTE="shell@oneplus12"
+# ============================================================
+# 配置区域
+# ============================================================
+SSH_USER="shell"
+SSH_KEY="$HOME/.ssh/id_ed25519_oneplus12"
 REMOTE_PATH="/storage/emulated/0"
 MOUNT_POINT="$HOME/Mobile_Phone"
-SSH_PORT="22"
 
-# 确保挂载点存在
-mkdir -p "$MOUNT_POINT"
+# ============================================================
+# 功能函数
+# ============================================================
 
-# 检查是否已挂载，避免重复挂载
-if mountpoint -q "$MOUNT_POINT"; then
-    echo "ℹ️  手机已挂载在 $MOUNT_POINT"
-    exit 0
-fi
+# 帮助信息
+show_help() {
+    echo "用法: $(basename "$0") [选项]"
+    echo ""
+    echo "选项:"
+    echo "  -r, --run      真正执行挂载操作 (默认仅为连接测试)"
+    echo "  -h, --help     显示此帮助信息"
+    echo ""
+    echo "说明: 默认情况下仅测试网络连接性，不执行实际挂载。"
+}
 
-echo "📂 正在挂载手机存储 ($REMOTE)..."
+# 识别网络环境
+detect_network() {
+    # 架构说明：
+    # 手机运行由 MagiskSSH 模块提供的 OpenSSH ，仅监听在 127.0.0.1:22
+    # 7743: 手机端网关监听的 Inbound 端口(用于 USB Rndis0 高速接入)，由手机端网关转发至 127.0.0.1:22
+    # 22  : 通过 Tailscale 分配的域名/IP 正常访问，由手机端网关转发至 127.0.0.1:22
+
+    local dev_name
+    dev_name=$(ip -o link show | awk -F': ' '{print $2}' | grep -E '^(enp[0-9a-z]+u[0-9]+|usb[0-9]+)' | head -n 1)
+
+    if [ -n "$dev_name" ]; then
+        local rndis_ip=$(ip route show dev "$dev_name" 2>/dev/null | grep 'default' | awk '{print $3}' | head -n 1)
+        if [ -n "$rndis_ip" ]; then
+            SSH_HOST="$rndis_ip"
+            SSH_PORT="7743"
+            echo "🔌 [USB 模式] 目标: $SSH_HOST:$SSH_PORT"
+            return 0
+        fi
+    fi
+
+    SSH_HOST="oneplus12"
+    SSH_PORT="22"
+    echo "🌐 [网络模式] 目标: $SSH_HOST:$SSH_PORT"
+}
 
 # 执行挂载
-# -o idmap=user: 把远程 root 映射为当前本地用户
-# -o allow_other: 允许本地非 root 用户访问该挂载点
-sshfs $REMOTE:$REMOTE_PATH $MOUNT_POINT \
-    -p $SSH_PORT \
-    -o kernel_cache \
-    -o auto_cache \
-    -o reconnect \
-    -o compression=no \
-    -o ServerAliveInterval=15 \
-    -o ServerAliveCountMax=3
+do_mount() {
+    local is_run_currently=$1
+    
+    # 确保挂载点存在
+    mkdir -p "$MOUNT_POINT"
 
-if [ $? -eq 0 ]; then
-    echo "✅ 挂载成功！"
-    echo "🔗 路径: $MOUNT_POINT"
-else
-    echo "❌ 挂载失败。"
-fi
+    # 检查是否已挂载
+    if mountpoint -q "$MOUNT_POINT"; then
+        echo "ℹ️  手机已在挂载状态: $MOUNT_POINT"
+        return 0
+    fi
+
+    if [ "$is_run_currently" != "true" ]; then
+        echo "🔍 [测试模式] 正在尝试 SSH 连接测试..."
+        ssh -o ConnectTimeout=3 -p "$SSH_PORT" -i "$SSH_KEY" "$SSH_USER@$SSH_HOST" "exit" 2>/dev/null
+        if [ $? -eq 0 ]; then
+            echo "✅ 连接测试成功！使用 -r 参数即可正式挂载。"
+        else
+            echo "❌ 连接测试失败，请检查[USB 网络共享]是否开启，或检查网络是否通畅。"
+            return 1
+        fi
+        return 0
+    fi
+
+    echo "📂 正在挂载远程存储 [$REMOTE_PATH] -> [$MOUNT_POINT]..."
+
+    # SSHFS 挂载参数优化
+    # -o allow_other: 注意需要 /etc/fuse.conf 开启 user_allow_other
+    # -o uid,gid: 明确指定本地用户 ID，避免 Arch 下出现“权限拒绝”
+    sshfs "$SSH_USER@$SSH_HOST:$REMOTE_PATH" "$MOUNT_POINT" \
+        -p "$SSH_PORT" -o IdentityFile="$SSH_KEY" \
+        -o idmap=user \
+        -o uid=$(id -u) \
+        -o gid=$(id -g) \
+        -o kernel_cache \
+        -o auto_cache \
+        -o reconnect \
+        -o compression=no \
+        -o ServerAliveInterval=15 \
+        -o ServerAliveCountMax=3 \
+        -o ConnectTimeout=5
+
+    if [ $? -eq 0 ]; then
+        echo "✅ 挂载成功！"
+    else
+        echo "❌ 挂载失败。"
+        return 1
+    fi
+}
+
+# ============================================================
+# 主入口
+# ============================================================
+
+main() {
+    local run_mount=false
+
+    case "$1" in
+        -r|--run)
+            run_mount=true
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        "")
+            run_mount=false
+            ;;
+        *)
+            echo "❌ 错误: 未知参数 '$1'"
+            show_help
+            exit 1
+            ;;
+    esac
+
+    detect_network
+    do_mount "$run_mount"
+}
+
+main "$@"

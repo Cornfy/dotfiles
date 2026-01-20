@@ -1,49 +1,156 @@
 #!/bin/bash
 
-# --- 配置区 ---
-REMOTE="root@oneplus12"
+# ============================================================
+# 配置区域
+# ============================================================
+SSH_USER="root"
+SSH_KEY="$HOME/.ssh/id_ed25519_oneplus12"
 REMOTE_PATH="/storage/emulated/0/"
 LOCAL_PATH="$HOME/Mobile_Phone_Rsync/"
-SSH_PORT="22"
 
-echo "🚀 Step 1: 开始向手机 [推送] 增量同步..."
+# ============================================================
+# 功能函数
+# ============================================================
 
-if [ ! -d "$LOCAL_PATH" ]; then
-    echo "待推动的目录不存在: $LOCAL_PATH"
-    exit 1
-fi
+# 帮助信息
+show_help() {
+    echo "用法: $(basename "$0") [选项]"
+    echo ""
+    echo "选项:"
+    echo "  -r, --run      真正执行推送操作 (默认仅为测试模式)"
+    echo "  -h, --help     显示此帮助信息"
+    echo ""
+    echo "说明: 该脚本使用 SSH + Rsync 来同步数据 (PC -> 手机) 。"
+    echo "      默认通过 USB Rndis0 (USB共享网络) 模式连接，以提高传输速度；如果未连接到手机的 Rndis0 设备，则使用常规模式作为回退。"
+    echo "      默认开启 Dry-run，仅显示将要推送到手机的文件。"
+}
 
-# 执行 rsync 同步
-# -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
-rsync -ahuP \
-	--no-p --no-o --no-g --omit-dir-times \
-	--exclude="Android/" \
-	--exclude=".thumbnails/" \
-	--exclude=".trashed-*" \
-	--exclude=".recycle" \
-	--exclude="cache/" \
-	--exclude=".git/" \
-	--exclude=".DS_Store" \
-	-e "ssh -p $SSH_PORT" \
-	"$LOCAL_PATH" \
-	"$REMOTE:$REMOTE_PATH"
+# 识别网络环境
+detect_network() {
+    # 手机运行由 MagiskSSH 模块提供的 OpenSSH ，仅监听在 127.0.0.1:22
+    # 7743: 手机端网关监听的 Inbound 端口(用于 USB Rndis0 高速接入)，由手机端网关转发至 127.0.0.1:22
+    # 22  : 通过 Tailscale 分配的域名/IP 正常访问，由手机端网关转发至 127.0.0.1:22
 
-if [ $? -ne 0 ]; then
-    echo "❌ 同步过程中出现错误。"
-    exit 1
-fi
-echo "✅ 同步完成！"
+    local dev_name
+    dev_name=$(ip -o link show | awk -F': ' '{print $2}' | grep -E '^(enp[0-9a-z]+u[0-9]+|usb[0-9]+)' | head -n 1)
 
-echo "🔄 Step 2: 正在通知手机刷新媒体库..."
+    if [ -n "$dev_name" ]; then
+        local rndis_ip=$(ip route show dev "$dev_name" 2>/dev/null | grep 'default' | awk '{print $3}' | head -n 1)
+        if [ -n "$rndis_ip" ]; then
+            SSH_HOST="$rndis_ip"
+            SSH_PORT="7743"
+            echo "🔌 [USB 模式] 目标: $SSH_HOST:$SSH_PORT"
+            return 0
+        fi
+    fi
 
-# 将命令通过标准输入传递给远程手机
-ssh -p "$SSH_PORT" "$REMOTE" "REMOTE_PATH=\"$REMOTE_PATH\" PATH=\$PATH:/system/bin sh -s" << 'EOF'
+    SSH_HOST="oneplus12"
+    SSH_PORT="22"
+    echo "🌐 [网络模式] 目标: $SSH_HOST:$SSH_PORT"
+}
+
+# 核心同步逻辑 (PC -> 手机)
+do_push() {
+    # 手机运行由 MagiskSSH 模块提供的 Rsync
+
+    local is_run_currently=$1
+    local dry_run_flag="-n"
+    
+    if [ "$is_run_currently" = "true" ]; then
+        dry_run_flag=""
+        echo "🚀 [正式执行] 开始向手机 [推送] 增量同步..."
+    else
+        echo "🔍 [测试模式] 仅显示差异，不修改手机文件 (使用 -r 真正执行)"
+    fi
+
+    # 检查本地目录
+    if [ ! -d "$LOCAL_PATH" ]; then
+        echo "❌ 错误: 待推送的本地目录不存在: $LOCAL_PATH"
+        exit 1
+    fi
+
+    local excludes=(
+        --exclude="Android/"
+        --exclude=".thumbnails/"
+        --exclude=".trashed-*"
+        --exclude=".recycle"
+        --exclude="cache/"
+        --exclude=".git/"
+        --exclude=".DS_Store"
+    )
+
+    # 执行 rsync
+    # -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
+    # --modify-window: 设置修改时间(mtime)误差范围 (单位: 秒)
+    # --omit-dir-times: 针对 Android 存储优化，不尝试同步目录的修改时间
+    rsync -ahuP $dry_run_flag \
+        --stats \
+        --modify-window=1 \
+        --no-p --no-o --no-g --omit-dir-times \
+        "${excludes[@]}" \
+        -e "ssh -p $SSH_PORT -i $SSH_KEY" \
+        "$LOCAL_PATH" \
+        "$SSH_USER@$SSH_HOST:$REMOTE_PATH"
+
+    # 直接记录状态并返回，不在这里打印“任务结束”，保持函数功能单一
+    local rsync_status=$?
+    if [ $rsync_status -eq 0 ]; then
+        echo "✨ [推送]完成。"
+    else
+        echo "💥 [推送]失败，跳过后续步骤。请检查手机端 SSH 是否启动，USB 共享是否打开 / 网络是否畅通。"
+    fi
+    return $rsync_status
+}
+
+# 刷新媒体库逻辑
+refresh_media_store() {
+    local is_run_currently=$1
+    if [ "$is_run_currently" != "true" ]; then
+        echo "⏭️  测试模式下跳过媒体库刷新。"
+        return 0
+    fi
+
+    echo "🔄 正在通知手机刷新媒体库..."
+    # 远程执行 am broadcast 命令
+    ssh -p "$SSH_PORT" -i "$SSH_KEY" "$SSH_USER@$SSH_HOST" "REMOTE_PATH=\"$REMOTE_PATH\" PATH=\$PATH:/system/bin sh -s" << 'EOF'
 am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file://$REMOTE_PATH" > /dev/null
-if [ $? -ne 0 ]; then
-    echo "❌ 手机端刷新媒体库过程中出现错误。"
-    exit 1
+if [ $? -eq 0 ]; then
+    echo "✅ 手机端刷新命令已成功"
+else
+    echo "⚠️  手机端刷新过程返回了非零状态"
 fi
-echo "✅ 手机端刷新处理完毕"
 EOF
+}
 
-echo "✨ 任务结束。"
+# ============================================================
+# 主入口
+# ============================================================
+
+main() {
+    local run_rsync=false
+
+    case "$1" in
+        -r|--run)
+            run_rsync=true
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        "")
+            run_rsync=false
+            ;;
+        *)
+            echo "❌ 错误: 未知参数 '$1'"
+            show_help
+            exit 1
+            ;;
+    esac
+
+    # 执行流程
+    detect_network
+    do_push "$run_rsync" && \
+        refresh_media_store "$run_rsync"
+}
+
+main "$@"

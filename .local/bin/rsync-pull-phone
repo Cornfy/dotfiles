@@ -1,37 +1,131 @@
 #!/bin/bash
 
-# --- 配置区 ---
-REMOTE="root@oneplus12"
+# ============================================================
+# 配置区域
+# ============================================================
+SSH_USER="root"
+SSH_KEY="$HOME/.ssh/id_ed25519_oneplus12"
 REMOTE_PATH="/storage/emulated/0/"
 LOCAL_PATH="$HOME/Mobile_Phone_Rsync/"
-SSH_PORT="22"
 
-# 确保本地目录存在
-mkdir -p "$LOCAL_PATH"
+# ============================================================
+# 功能函数
+# ============================================================
 
-echo "📥 开始从手机[拉取]增量同步..."
+# 帮助信息
+show_help() {
+    echo "用法: $(basename "$0") [选项]"
+    echo ""
+    echo "选项:"
+    echo "  -r, --run    真正执行同步操作 (默认仅为测试模式)"
+    echo "  -h, --help     显示此帮助信息"
+    echo ""
+    echo "说明: 该脚本使用 SSH + Rsync 来同步数据 (PC -> 手机) 。"
+    echo "      默认通过 USB Rndis0 (USB共享网络) 模式连接，以提高传输速度；如果未连接到手机的 Rndis0 设备，则使用常规模式作为回退。"
+    echo "      默认开启 Dry-run，仅显示将要推送到手机的文件。"
+}
 
-# 执行 rsync 同步
-# -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
-rsync -ahuP \
-	--no-p --no-g --no-o --chmod=D755,F644 \
-	--exclude="Android/" \
-	--exclude=".thumbnails/" \
-	--exclude=".trashed-*" \
-	--exclude=".recycle" \
-	--exclude="cache/" \
-	--exclude=".git/" \
-	--exclude=".DS_Store" \
-	-e "ssh -p $SSH_PORT" \
-	$REMOTE:$REMOTE_PATH \
-	$LOCAL_PATH
+# 识别网络环境
+detect_network() {
+    # 手机运行由 MagiskSSH 模块提供的 OpenSSH ，仅监听在 127.0.0.1:22
+    # 7743: 手机端网关监听的 Inbound 端口(用于 USB Rndis0 高速接入)，由手机端网关转发至 127.0.0.1:22
+    # 22  : 通过 Tailscale 分配的域名/IP 正常访问，由手机端网关转发至 127.0.0.1:22
 
-if [ $? -eq 0 ]; then
-    # 如有需要，手动处理权限
-    # find "$LOCAL_PATH" -type d -exec chmod 755 {} +
-    # find "$LOCAL_PATH" -type f -exec chmod 644 {} +
-    # chmod -R g-s "$LOCAL_PATH"
-    echo "✅ 同步完成！文件归属于: $(whoami)"
-else
-    echo "❌ 同步过程中出现错误。"
-fi
+    local dev_name
+    dev_name=$(ip -o link show | awk -F': ' '{print $2}' | grep -E '^(enp[0-9a-z]+u[0-9]+|usb[0-9]+)' | head -n 1)
+
+    if [ -n "$dev_name" ]; then
+        local rndis_ip=$(ip route show dev "$dev_name" 2>/dev/null | grep 'default' | awk '{print $3}' | head -n 1)
+        if [ -n "$rndis_ip" ]; then
+            SSH_HOST="$rndis_ip"
+            SSH_PORT="7743"
+            echo "🔌 [USB 模式] 目标: $SSH_HOST:$SSH_PORT"
+            return 0
+        fi
+    fi
+
+    SSH_HOST="oneplus12"
+    SSH_PORT="22"
+    echo "🌐 [网络模式] 目标: $SSH_HOST:$SSH_PORT"
+}
+
+# 同步核心(手机 -> PC)
+do_sync() {
+    # 手机运行由 MagiskSSH 模块提供的 Rsync
+
+    local is_run_currently=$1
+    local dry_run_flag="-n"
+    
+    if [ "$is_run_currently" = "true" ]; then
+        dry_run_flag=""
+        echo "📥 [正式执行] 开始从手机[拉取]增量同步..."
+    else
+        echo "🔍 [测试模式] 仅显示差异，不修改文件 (使用 -r 真正执行)"
+    fi
+
+    local excludes=(
+        --exclude="Android/"
+        --exclude=".thumbnails/"
+        --exclude=".trashed-*"
+        --exclude=".recycle"
+        --exclude="cache/"
+        --exclude=".git/"
+        --exclude=".DS_Store"
+    )
+
+    # 执行 rsync
+    # -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
+    # --modify-window: 设置修改时间(mtime)误差范围 (单位: 秒)
+    rsync -ahuP $dry_run_flag \
+        --stats \
+        --modify-window=1 \
+        --no-p --no-g --no-o --chmod=D755,F644 \
+        "${excludes[@]}" \
+        -e "ssh -p $SSH_PORT -i $SSH_KEY" \
+        "$SSH_USER@$SSH_HOST:$REMOTE_PATH" \
+        "$LOCAL_PATH"
+
+    if [ $? -eq 0 ]; then
+        echo "✨ [拉取]完成。"
+    else
+        echo "💥 [拉取]失败。请检查手机端 SSH 是否启动，USB 共享是否打开 / 网络是否畅通。"
+        exit 1
+    fi
+}
+
+# ============================================================
+# 主入口
+# ============================================================
+
+main() {
+    local run_rsync=false
+
+    # 解析参数
+    case "$1" in
+        -r|--run)
+            run_rsync=true
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        "")
+            # 默认不传参数时的逻辑：执行测试
+            run_rsync=false
+            ;;
+        *)
+            echo "❌ 错误: 未知参数 '$1'"
+            show_help
+            exit 1
+            ;;
+    esac
+
+    # 确保本地目录
+    mkdir -p "$LOCAL_PATH"
+
+    # 执行流程
+    detect_network
+    do_sync "$run_rsync"
+}
+
+main "$@"
