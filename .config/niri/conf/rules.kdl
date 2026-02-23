@@ -1,0 +1,33 @@
+// Window rules let you adjust behavior for individual windows.
+prefer-no-csd
+
+window-rule {
+    draw-border-with-background false
+    geometry-corner-radius 10
+    clip-to-geometry true
+}
+
+window-rule {
+    match is-active=false
+    opacity 0.75
+}
+
+window-rule {
+    match is-active=true
+    opacity 0.95
+}
+
+// Open the Firefox picture-in-picture player as floating by default.
+window-rule {
+    // This app-id regular expression will work for both:
+    // - host Firefox (app-id is "firefox")
+    // - Flatpak Firefox (app-id is "org.mozilla.firefox")
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+window-rule {
+    match app-id="pitfall.exe"
+    opacity 1.0
+}
+
