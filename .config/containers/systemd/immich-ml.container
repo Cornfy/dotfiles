@@ -1,0 +1,15 @@
+[Unit]
+Description=Immich Machine Learning
+PartOf=immich-server.service
+
+[Container]
+ContainerName=immich_machine_learning
+Image=ghcr.io/immich-app/immich-machine-learning:release-openvino
+EnvironmentFile=%h/podman/immich/.env
+Network=immich.network
+# ML 容器也需要自己的缓存空间
+Mount=type=tmpfs,tmpfs-size=1G,destination=/cache,U=true
+AutoUpdate=image
+
+[Install]
+WantedBy=default.target

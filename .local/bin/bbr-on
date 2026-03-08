@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# 检查是否拥有 root 权限
+if [[ $EUID -ne 0 ]]; then
+   echo "❌ 此脚本需要 root 权限运行，请使用 sudo。"
+   exit 1
+fi
+
+echo "🔍 正在检查系统 BBR 状态..."
+
+# 1. 获取当前状态
+current_cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)
+current_qdisc=$(sysctl -n net.core.default_qdisc 2>/dev/null)
+
+# 2. 判断是否已经完美配置
+if [[ "$current_cc" == "bbr" ]] && [[ "$current_qdisc" == "cake" ]]; then
+    echo "✅ BBR 已经是启用状态，且队列算法已设置为 CAKE。"
+    exit 0
+fi
+
+echo "🔄 检测到配置未完全启用，正在尝试修复..."
+
+# 3. 尝试加载 BBR 模块
+if ! lsmod | grep -q "tcp_bbr"; then
+    modprobe tcp_bbr || { echo "❌ 无法加载 tcp_bbr 模块，请检查内核版本"; exit 1; }
+fi
+
+# 4. 应用参数
+sysctl -w net.core.default_qdisc=cake > /dev/null
+sysctl -w net.ipv4.tcp_congestion_control=bbr > /dev/null
+
+# 5. 验证执行结果
+final_cc=$(sysctl -n net.ipv4.tcp_congestion_control)
+final_qdisc=$(sysctl -n net.core.default_qdisc)
+if [[ "$final_cc" == "bbr" ]]; then
+    echo "🚀 BBR 已成功启用！"
+    echo "当前状态: CC = $final_cc | QDisc = $final_qdisc"
+else
+    echo "❌ BBR 启用失败，请手动检查系统配置。"
+    exit 1
+fi
+
+# 持久化提示
+CONF_FILE="/etc/sysctl.d/99-bbr.conf"
+echo -e "\n📝 若需持久化配置，请在 $CONF_FILE 中写入："
+echo "--------------------------------------"
+echo -e "net.core.default_qdisc=cake\nnet.ipv4.tcp_congestion_control=bbr"
+echo "--------------------------------------"

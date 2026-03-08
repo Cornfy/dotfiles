@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # 文件搜索脚本 (rg + fzf)，支持排除目录
 # 支持相对路径（node_modules/）和绝对路径（/home/elysia/Apps）
 # 改进：对于简单的相对目录名（例如 "node_modules"），实现关键词式排除，即排除任意层级的同名目录

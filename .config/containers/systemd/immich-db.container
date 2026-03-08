@@ -1,0 +1,15 @@
+[Unit]
+Description=Immich Postgres Database
+PartOf=immich-server.service
+
+[Container]
+ContainerName=immich_postgres
+Image=ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+EnvironmentFile=%h/podman/immich/.env
+Volume=/mnt/cache/elysia/immich/postgres_data:/var/lib/postgresql/data:Z
+Exec=postgres -c config_file=/etc/postgresql/postgresql.conf -c log_statement=all
+Network=immich.network
+AutoUpdate=image
+
+[Install]
+WantedBy=default.target

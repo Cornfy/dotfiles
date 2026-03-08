@@ -2,7 +2,7 @@
     "layer": "bottom",
     "position": "bottom", // Waybar position (top|bottom|left|right)
     "height": 30,
-    "modules-left": ["custom/launcher", "tray", "clock", "custom/mpc", "custom/network_traffic", "niri/workspaces"],
+    "modules-left": ["custom/launcher", "tray", "clock", "custom/mpc", "custom/network_traffic"],
     "modules-center": ["niri/window"],
     "modules-right": ["custom/clipboard", "custom/toggle_dark", "temperature", "cpu", "memory", "network", "bluetooth", "backlight", "pulseaudio", "battery" , "custom/power"],
 
@@ -96,7 +96,7 @@
         "format-wifi": "   {essid}",
         "format-ethernet": "   {ifname}: {ipaddr}/{cidr}",
         "format-disconnected": "⚠  Disconnected",
-        "on-click": "$TERM -e nmtui" //impala
+        "on-click": "$TERM -e impala" // nmtui
     },
 
     "bluetooth": {

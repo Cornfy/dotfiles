@@ -76,8 +76,8 @@ do_sync() {
     # 执行 rsync
     # -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
     # --modify-window: 设置修改时间(mtime)误差范围 (单位: 秒)
+    # --stats: 显示统计信息
     rsync -ahuP $dry_run_flag \
-        --stats \
         --modify-window=1 \
         --no-p --no-g --no-o --chmod=D755,F644 \
         "${excludes[@]}" \

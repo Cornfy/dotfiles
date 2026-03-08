@@ -1,0 +1,12 @@
+[Unit]
+Description=Immich Redis Cache
+PartOf=immich-server.service
+
+[Container]
+ContainerName=immich_redis
+Image=docker.io/valkey/valkey:8
+Network=immich.network
+AutoUpdate=image
+
+[Install]
+WantedBy=default.target

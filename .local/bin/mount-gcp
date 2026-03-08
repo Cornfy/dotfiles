@@ -3,10 +3,10 @@
 # ============================================================
 # 配置区域
 # ============================================================
-SSH_USER="shell"
-SSH_KEY="$HOME/.ssh/id_ed25519_oneplus12"
-REMOTE_PATH="/storage/emulated/0"
-MOUNT_POINT="$HOME/mnt/oneplus12"
+SSH_USER="elysia"
+SSH_KEY="$HOME/.ssh/id_ed25519_gcp"
+REMOTE_PATH="$HOME"
+MOUNT_POINT="$HOME/mnt/debian-gcp"
 
 # ============================================================
 # 功能函数
@@ -30,20 +30,20 @@ detect_network() {
     # 7743: 手机端网关监听的 Inbound 端口(用于 USB Rndis0 高速接入)，由手机端网关转发至 127.0.0.1:22
     # 22  : 通过 Tailscale 分配的域名/IP 正常访问，由手机端网关转发至 127.0.0.1:22
 
-    local dev_name
-    dev_name=$(ip -o link show | awk -F': ' '{print $2}' | grep -E '^(enp[0-9a-z]+u[0-9]+|usb[0-9]+)' | head -n 1)
+    #local dev_name
+    #dev_name=$(ip -o link show | awk -F': ' '{print $2}' | grep -E '^(enp[0-9a-z]+u[0-9]+|usb[0-9]+)' | head -n 1)
 
-    if [ -n "$dev_name" ]; then
-        local rndis_ip=$(ip route show dev "$dev_name" 2>/dev/null | grep 'default' | awk '{print $3}' | head -n 1)
-        if [ -n "$rndis_ip" ]; then
-            SSH_HOST="$rndis_ip"
-            SSH_PORT="7743"
-            echo "🔌 [USB 模式] 目标: $SSH_HOST:$SSH_PORT"
-            return 0
-        fi
-    fi
+    #if [ -n "$dev_name" ]; then
+    #    local rndis_ip=$(ip route show dev "$dev_name" 2>/dev/null | grep 'default' | awk '{print $3}' | head -n 1)
+    #    if [ -n "$rndis_ip" ]; then
+    #        SSH_HOST="$rndis_ip"
+    #        SSH_PORT="7743"
+    #        echo "🔌 [USB 模式] 目标: $SSH_HOST:$SSH_PORT"
+    #        return 0
+    #    fi
+    #fi
 
-    SSH_HOST="oneplus12"
+    SSH_HOST="debian-gcp"
     SSH_PORT="22"
     echo "🌐 [网络模式] 目标: $SSH_HOST:$SSH_PORT"
 }
@@ -57,7 +57,7 @@ do_mount() {
 
     # 检查是否已挂载
     if mountpoint -q "$MOUNT_POINT"; then
-        echo "ℹ️  手机已在挂载状态: $MOUNT_POINT"
+        echo "ℹ️  Debian-GCP 已在挂载状态: $MOUNT_POINT"
         return 0
     fi
 
@@ -67,7 +67,7 @@ do_mount() {
         if [ $? -eq 0 ]; then
             echo "✅ 连接测试成功！使用 -r 参数即可正式挂载。"
         else
-            echo "❌ 连接测试失败，请检查[USB 网络共享]是否开启，或检查网络是否通畅。"
+            echo "❌ 连接测试失败，请检查网络是否通畅。"
             return 1
         fi
         return 0

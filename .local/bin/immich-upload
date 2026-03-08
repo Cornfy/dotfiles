@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+# 配置区域
+SERVER_URL="http://localhost:2283"
+API_KEY_PATH="$HOME/podman/immich/api-key"
+
+# 帮助信息
+usage() {
+    echo "Usage: $(basename "$0") [-a album_name] <path_to_upload>"
+    echo "  -a : 指定影集名称 (默认不指定)"
+    exit 1
+}
+
+# 解析参数
+ALBUM=""
+while getopts "a:h" opt; do
+    case $opt in
+        a) ALBUM="$OPTARG" ;;
+        h) usage ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+# 获取目标路径
+TARGET_PATH=$1
+
+if [[ -z "$TARGET_PATH" ]]; then
+    echo "❌ 错误: 请指定要上传的文件或文件夹"
+    usage
+fi
+
+# 检查 API Key
+if [[ ! -f "$API_KEY_PATH" ]]; then
+    echo "❌ 错误: 找不到 API Key 文件: $API_KEY_PATH"
+    exit 1
+fi
+
+API_KEY=$(cat "$API_KEY_PATH")
+
+# 构建命令
+CMD=("immich-go" "upload" "from-folder")
+CMD+=("--server" "$SERVER_URL")
+CMD+=("--api-key" "$API_KEY")
+
+# 如果指定了影集
+if [[ -n "$ALBUM" ]]; then
+    CMD+=("--into-album" "$ALBUM")
+fi
+
+# 最后的上传路径
+CMD+=("$TARGET_PATH")
+
+# 执行
+echo "🚀 正在上传 $TARGET_PATH 到 $SERVER_URL ..."
+"${CMD[@]}"

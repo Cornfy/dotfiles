@@ -83,8 +83,8 @@ do_push() {
     # -a: 归档模式, -h: 人类可读, -u: 增量更新, -P: 显示进度
     # --modify-window: 设置修改时间(mtime)误差范围 (单位: 秒)
     # --omit-dir-times: 针对 Android 存储优化，不尝试同步目录的修改时间
+    # --stats: 显示统计信息
     rsync -ahuP $dry_run_flag \
-        --stats \
         --modify-window=1 \
         --no-p --no-o --no-g --omit-dir-times \
         "${excludes[@]}" \

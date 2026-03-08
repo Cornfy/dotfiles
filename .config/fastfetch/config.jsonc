@@ -1,0 +1,55 @@
+{
+    "logo": {
+        "padding": {
+            "top": 2
+        }
+    },
+    "modules": [
+        "title",
+        "separator",
+        "os",
+        "host",
+        "bios",
+        "board",
+        "kernel",
+        "uptime",
+        "packages",
+        "shell",
+        "display",
+        "wm",
+        "font",
+        "cursor",
+        "terminal",
+        "terminalfont",
+        {
+            "type": "cpu",
+            "temp": true
+        },
+        {
+            "type": "gpu",
+            "temp": true
+        },
+        "memory",
+        {
+            "type": "swap",
+            "separate": true
+        },
+        "disk",
+        {
+            "type": "battery",
+            "temp": true
+        },
+        //{
+        //    "type": "publicip",
+        //    "timeout": 1000
+        //},
+        {
+            "type": "localip",
+            "showAllIps": true
+        },
+        "locale",
+        "vulkan",
+        "opengl",
+        "break"
+    ]
+}

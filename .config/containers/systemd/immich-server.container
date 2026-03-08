@@ -1,0 +1,17 @@
+[Unit]
+Description=Immich Main Server
+After=immich-db.service immich-redis.service immich-ml.service
+Requires=immich-db.service immich-redis.service immich-ml.service
+
+[Container]
+ContainerName=immich_server
+Image=ghcr.io/immich-app/immich-server:release
+EnvironmentFile=%h/podman/immich/.env
+PublishPort=2283:2283
+Volume=/mnt/data/elysia/immich_library:/data
+Network=immich.network
+Mount=type=tmpfs,tmpfs-size=1G,destination=/cache,U=true
+AutoUpdate=image
+
+[Install]
+WantedBy=default.target
