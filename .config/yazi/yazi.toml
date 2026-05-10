@@ -57,7 +57,7 @@ ratio = [1, 4, 5]
 [open]
 	rules = [
 		# Folder
-		{ name = "*/", use = [ "edit", "open", "reveal" ] },
+		{ url = "*/", use = [ "edit", "open", "reveal" ] },
 
 		# Text
 		{ mime = "text/*", use = [ "edit", "edit-in-new-window", "reveal" ] },
@@ -79,7 +79,7 @@ ratio = [1, 4, 5]
 		{ mime = "inode/empty", use = [ "edit", "reveal" ] },
 
 		# Fallback
-		{ name = "*", use = [ "open", "reveal" ] },
+		{ url = "*", use = [ "open", "reveal" ] },
 	]
 
 [plugin]
@@ -122,3 +122,4 @@ ratio = [1, 4, 5]
 
 [tasks]
 	image_alloc = 1073741824	# = 1 GB
+

@@ -36,4 +36,3 @@ function Linemode:info()
 
 	return string.format("%s %s", size and ya.readable_size(size) or "", time)
 end
-
