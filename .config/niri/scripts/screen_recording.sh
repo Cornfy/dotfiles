@@ -3,86 +3,55 @@
 basepath="$HOME/Videos/Recording"
 output="$basepath/VID_$(date '+%Y%m%d_%H%M%S_%3N').mp4"
 
-mkdir -p  $basepath
+mkdir -p "$basepath"
+command -v gpu-screen-recorder >/dev/null || { echo "错误：gpu-screen-recorder 未找到。请安装 gpu-screen-recorder 包。" >&2; exit 1; }
+command -v notify-send >/dev/null || { echo "错误：notify-send 未找到。请安装 libnotify 包。" >&2; exit 1; }
 
-hardware_recorder() {
-	# VA-API 设备，用于硬件加速
-	VAAPI_DEVICE="/dev/dri/renderD128" 
+hevc_recorder() {
+	# 参数 $1 代表编码器类型：传入 "gpu" 使用显卡硬件，传入 "cpu" 使用处理器软件编码
+	local mode=$1 
 
-	# 如果没有 notify-send 命令，请安装 libnotify 包
-	if pgrep -x "wf-recorder" > /dev/null; then
-		# 在杀掉进程前，先看一眼它的文件名参数
-		# [w] 技巧是为了过滤掉 grep 进程本身
-		local recording_path=$(ps aux | grep "[w]f-recorder" | awk -F '-f ' '{print $2}' | awk '{print $1}')
-		pkill -SIGINT wf-recorder
-		notify-send "✅ [vaapi_hevc] 屏幕录制完成" "视频已保存到：\n$recording_path"
+	if pgrep -f "gpu-screen-recorder" > /dev/null; then
+		# 提取当前正在录制的文件名，用于通知显示
+		local recording_path=$(ps aux | grep "[g]pu-screen-recorder" | awk -F '-o ' '{print $2}' | awk '{print $1}')
+		# 使用 SIGINT 信号停止，这是录制 MP4 必须的，否则视频头信息无法闭合导致无法播放
+		pkill -SIGINT -f gpu-screen-recorder
+		notify-send "✅ [GSR-$mode] 屏幕录制完成" "视频已保存到：\n$recording_path"
 	else
-		notify-send "🎥 [vaapi_hevc] 屏幕录制开始..."
-		# 参数解释
-		# --device $VAAPI_DEVICE	# 指定 VA-API 设备
-		# --codec hevc_vaapi		# 视频编码格式：硬件 HEVC
-		# --codec-param qp="18"		# 恒定质量模式 (CQP)，QP 值越低质量越高（一般 18 ~ 28 ）。
-		# --codec-param preset=speed	# 预设，速度优先
-		# --audio			# 音频录制
-		# --audio-backend=pipewire	# 指定 PipeWire 作为音频后端
-		# --audio-codec aac		# 音频编码格式 aac
-		# --sample-rate 48000		# 音频采样率 48 kHz
-		# --audio-codec-param b=128k	# 音频比特率 128 kbps
-		wf-recorder -f "$output" \
-			--device "$VAAPI_DEVICE" \
-			--codec hevc_vaapi \
-			--codec-param qp="18" \
-			--codec-param preset=speed \
-			--audio \
-			--audio-backend=pipewire \
-			--audio-codec aac \
-			--sample-rate 48000 \
-			--audio-codec-param b=128k \
-			&> /dev/null &		
-		sleep 1
-		if ! pgrep -x "wf-recorder" > /dev/null ; then
-			notify-send "⚠️ 屏幕录制启动失败，请检查录制脚本和 VA-API 配置！！" "$0"
-		fi
-	fi
-}
-
-software_recorder() {
-	# 如果没有 notify-send 命令，请安装 libnotify 包
-	if pgrep -x "wf-recorder" > /dev/null; then
-		# 在杀掉进程前，先看一眼它的文件名参数
-		# [w] 技巧是为了过滤掉 grep 进程本身
-		local recording_path=$(ps aux | grep "[w]f-recorder" | awk -F '-f ' '{print $2}' | awk '{print $1}')
-		pkill -SIGINT wf-recorder
-		notify-send "✅ [libx265] 屏幕录制完成" "视频已保存到：\n$recording_path"
-	else
-		notify-send "🎥 [libx265] 屏幕录制开始..."
-		# 参数解释
-		# --codec libx265		# 视频编码格式	H.265
-		# --pixel-format yuv420p	# 视频色彩空间	YUV420
-		# --codec-param b=16000k	# 视频比特率	16 Mbps
-		# --audio			# 音频录制
-		# --audio-backend=pipewire	# 指定 PipeWire 作为音频后端
-		# --audio-codec aac		# 音频编码格式	aac
-		# --sample-rate 48000		# 音频采样率	48 kHz
-		# --audio-codec-param b=128k	# 音频比特率	128 kbps
-		wf-recorder -f "$output" \
-			--codec libx265 \
-			--pixel-format yuv420p \
-			--codec-param b=16000k \
-			--audio \
-			--audio-backend=pipewire \
-			--audio-codec aac \
-			--sample-rate 48000 \
-			--audio-codec-param b=128k \
+		notify-send "🎥 [GSR-$mode] 屏幕录制开始..."
+		# ----------------------------------------------------------------------
+		# gpu-screen-recorder 参数详细说明：
+		# ----------------------------------------------------------------------
+		# -w screen		# 录制范围：全屏
+		# -f 60			# 帧率：60 FPS
+		# -encoder "$mode"	# 编码器：gpu 或 cpu
+		# -k hevc		# 视频编码格式：使用 H.265 (HEVC)，高压缩比高清晰度
+		# -q very_high		# 预设质量：很高 (在比特率限制内尽可能压榨画质)
+		# -a "default_output"	# 音频设备：自动捕获 PipeWire 默认输出流 (内置音频)
+		# -ac aac		# 音频编码格式：AAC (兼容性最好)
+		# -ab 128k		# 音频比特率：128 kbps
+		# -o "$output"		# 输出文件名
+		# ----------------------------------------------------------------------
+		gpu-screen-recorder \
+			-w screen \
+			-f 60 \
+			-encoder "$mode" \
+			-k hevc \
+			-q very_high \
+			-a "default_output" \
+			-ac aac \
+			-ab 128k \
+			-o "$output" \
 			&> /dev/null &
 		sleep 1
-		if ! pgrep -x "wf-recorder" > /dev/null ; then
-			notify-send "⚠️ 屏幕录制启动失败，请检查录制脚本！！" "$0"
+		if ! pgrep -f "gpu-screen-recorder" > /dev/null ; then
+			notify-send "⚠️ 启动失败！" "可能的错误：显卡驱动不支持 HEVC、PipeWire 挂起或路径无写入权限。"
 		fi
 	fi
 }
 
+# 推荐：硬件加速录制
+hevc_recorder "gpu"
 
-# 执行函数进行屏幕录制（二选一）
-hardware_recorder	# 硬件加速
-# software_recorder	# 软件回退
+# 备选：软件录制 (仅当硬件加速不可用时，取消下面注释并注释掉上面的 gpu 行)
+# hevc_recorder "cpu"
