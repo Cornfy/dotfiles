@@ -27,7 +27,18 @@ window-rule {
 }
 
 window-rule {
+    match app-id="(?i)mpv"
+    opacity 1.0
+}
+
+window-rule {
     match app-id="pitfall.exe"
     opacity 1.0
+}
+
+window-rule {
+    match app-id="(?i)waydroid"
+    open-fullscreen true
+    default-column-width { proportion 1.0; }
 }
 
