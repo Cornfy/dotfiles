@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# 检查参数
+if [ "$#" -lt 3 ]; then
+    echo "使用方法: $0 <输入图片> <目标比例, 如 16:9 或 1.33> <输出图片>"
+    exit 1
+fi
+
+INPUT_IMG="$1"
+RATIO_INPUT="$2"
+OUTPUT_IMG="$3"
+
+# 检查依赖 (加入了 exiftool 核心组件)
+if ! command -v magick &> /dev/null || ! command -v oxipng &> /dev/null || ! command -v exiftool &> /dev/null; then
+    echo "❌ 错误: 需要安装 imagemagick, oxipng 和 exiftool"
+    exit 1
+fi
+
+# 将 16:9 这种分数转换为浮点数（如果是单个数字如 1.33 则保持不变）
+TARGET_RATIO=$(echo "$RATIO_INPUT" | awk -F: '{if(NF==2) print $1/$2; else print $1}')
+
+echo "正在将 $INPUT_IMG 裁切为目标比例: $RATIO_INPUT (浮点值: $TARGET_RATIO)..."
+
+# 使用 ImageMagick 进行动态比例居中裁切
+# 加上 -strip 在这里清除 ImageMagick 试图生成的 EXIF 字段
+magick "$INPUT_IMG" -gravity Center \
+  -crop "%[fx:w/h > $TARGET_RATIO ? h*$TARGET_RATIO : w]x%[fx:w/h > $TARGET_RATIO ? h : w/$TARGET_RATIO]+0+0" \
+  +repage -strip "$OUTPUT_IMG"
+
+# 精细化压缩：清理无损优化过程中的临时块
+oxipng -o 4 --strip safe "$OUTPUT_IMG" > /dev/null 2>&1
+
+# 从原图克隆所有 EXIF，并恢复 ICC 色彩配置文件
+# --ExifImageWidth/Height: 排除原图旧尺寸，让看图软件直接读取新图片的真实像素
+# --ThumbnailImage: 排除旧的预览缩略图，避免缩略图与裁切后的实物不符
+# -ICC_Profile: 提取原图完整的色彩描述文件并嵌入新图，防止偏色
+exiftool -tagsFromFile "$INPUT_IMG" \
+  -all:all \
+  -ICC_Profile \
+  --ExifImageWidth --ExifImageHeight \
+  --ThumbnailImage \
+  "$OUTPUT_IMG" -overwrite_original > /dev/null 2>&1
+
+echo "✨ 裁切完成且 EXIF 已还原！已保存至 $OUTPUT_IMG"
