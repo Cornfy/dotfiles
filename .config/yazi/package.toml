@@ -1,12 +1,12 @@
 [[plugin.deps]]
 use = "yazi-rs/plugins:piper"
-rev = "ac82af3"
-hash = "384464b6df8cb807425c521f8cd790f3"
+rev = "b9946d9"
+hash = "12126fca34f9f1802bb57b88292f57af"
 
 [[plugin.deps]]
 use = "boydaihungst/mediainfo"
-rev = "49f5ab7"
-hash = "3b9ca58d8963d7213532d155340e0244"
+rev = "a6d30a1"
+hash = "f3970de915c038d09fecf8d93d156fba"
 
 [[plugin.deps]]
 use = "ndtoan96/ouch"
@@ -15,12 +15,12 @@ hash = "f5afc904d5106ee368c8aa2ded43bd74"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:smart-enter"
-rev = "442d908"
+rev = "b9946d9"
 hash = "187cc58ba7ac3befd49c342129e6f1b6"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:chmod"
-rev = "442d908"
+rev = "b9946d9"
 hash = "f0c8c378184d5f8abd1b095a443d336d"
 
 [[plugin.deps]]
@@ -30,8 +30,8 @@ hash = "5c587834c274dca9059092714ece1f18"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:mount"
-rev = "442d908"
-hash = "77e20b071404f97c09d3f9afdb9482e0"
+rev = "b9946d9"
+hash = "e3260d0b1feded8c8e3ae3afa1169e30"
 
 [flavor]
 deps = []
