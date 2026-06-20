@@ -1,0 +1,2 @@
+wget https://raw.githubusercontent.com/upscayl/upscayl/main/resources/models/high-fidelity-4x.param
+wget https://raw.githubusercontent.com/upscayl/upscayl/main/resources/models/high-fidelity-4x.bin
