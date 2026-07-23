@@ -355,10 +355,9 @@ execute_sandboxed_command() {
 	--ro-bind /sbin /sbin
 	--ro-bind /lib /lib
 	--ro-bind /lib64 /lib64
-	--ro-bind /mnt/games/elysia /mnt/games/elysia
     )
 
-    # 、GPU 绑定
+    # GPU 绑定
     bwrap_arguments+=(
 	--dev-bind /dev/dri /dev/dri
     )

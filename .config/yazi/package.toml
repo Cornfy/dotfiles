@@ -1,12 +1,12 @@
 [[plugin.deps]]
 use = "yazi-rs/plugins:piper"
-rev = "b9946d9"
-hash = "12126fca34f9f1802bb57b88292f57af"
+rev = "bbac5e7"
+hash = "e0d59bd47866a6a574c74574097e5070"
 
 [[plugin.deps]]
 use = "boydaihungst/mediainfo"
-rev = "a6d30a1"
-hash = "f3970de915c038d09fecf8d93d156fba"
+rev = "e079a00"
+hash = "5e203acd4ff62c96cbc2887c8142d78"
 
 [[plugin.deps]]
 use = "ndtoan96/ouch"
@@ -15,13 +15,13 @@ hash = "f5afc904d5106ee368c8aa2ded43bd74"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:smart-enter"
-rev = "b9946d9"
+rev = "bbac5e7"
 hash = "187cc58ba7ac3befd49c342129e6f1b6"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:chmod"
-rev = "b9946d9"
-hash = "f0c8c378184d5f8abd1b095a443d336d"
+rev = "bbac5e7"
+hash = "5b1c276b75cae91cbbdbe7863f39a540"
 
 [[plugin.deps]]
 use = "grappas/wl-clipboard"
@@ -30,7 +30,7 @@ hash = "5c587834c274dca9059092714ece1f18"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:mount"
-rev = "b9946d9"
+rev = "bbac5e7"
 hash = "e3260d0b1feded8c8e3ae3afa1169e30"
 
 [flavor]

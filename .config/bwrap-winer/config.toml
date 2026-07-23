@@ -1,0 +1,60 @@
+# 说明：
+# 1. 本文件遵循扁平 TOML 规范 (KEY = "VALUE")。
+# 2. 支持使用 '#' 或 ';' 进行整行和行尾注释。
+# 3. 任何非 "WINER_" 开头的键值对，都会被本工具自动作为环境变量注入沙箱内部。
+#
+# ⚠️ 注意：配置文件中，引号中的内容会被视为字符串，暂不支持 '~' 或 ‘$HOME’ 等解析。
+
+
+# 沙箱持久化数据存储的宿主机根目录
+WINER_DATA_ROOT = "/home/elysia/.local/share/bwrap-winer/sandboxes"
+
+# Wine 路径
+WINER_WINE_PATH = '/home/elysia/Games/runners/wine-dwproton-wow64-11.0-4/bin/wine'
+
+# 隐私设置
+WINER_NET = "1"
+WINER_SHARE_PID = "1"
+WINER_IPC = "1"
+WINER_DEV = "1"
+
+# 游戏模式
+WINER_GAMEMODE = "0"
+
+# 穿透深度：
+# '0'：仅只读挂载目标 EXE 文件自身。
+# '1'：挂载 EXE 所在的目录，使其能读写同目录下的资源（默认）。
+# 'n'：向上穿透挂载 n 层父级目录。
+WINER_PENETRATE = "1"
+
+
+# =====================================================================
+# 通用环境变量（自动穿透送入沙箱）
+# =====================================================================
+
+# 架构定义：强制 Wine 容器工作在 32位("win32") 或 64位("win64") 模式下
+WINEARCH = "win64"
+
+# 核心同步锁优化：
+; WINEESYNC = "1"      # 开启 Eventfd 级同步锁（大幅降低多线程 CPU 瓶颈，需要宿主支持 esync）
+WINEFSYNC = "1"        # 开启 Futex 级同步锁（性能优于 esync，需要 Linux 5.16+ 或带 fsync 补丁的内核）
+
+# 地址空间拓展：强制让 32 位 Windows 应用程序支持 4GB 内存（解决老游戏内存溢出崩溃崩溃）
+; WINE_LARGE_ADDRESS_AWARE = "1"
+
+# Wine 调试日志控制：
+# "-all"           # 关闭所有 Wine 报错和调试输出，可极大地提高游戏帧率
+# "fixme-all"      # 仅关闭烦人的 fixme 未实现警告（推荐）
+# "warn+all"       # 打印所有警告日志（用于排查闪退、报错原因）
+WINEDEBUG = "fixme-all"
+
+# 虚拟桌面：让游戏/应用在一个强制分辨率的窗口内运行，防止游戏修改宿主机屏幕的分辨率
+; WINE_DESKTOP_USER_X11 = "1920x1080"
+
+# MangoHUD 帧率及硬件温度监控监控：
+; MANGOHUD = "1"               # 开启 MangoHUD 游戏内性能监控覆写
+; MANGOHUD_CONFIG = "cpu_temp,gpu_temp,ram,vram,core_load,fps,frametime,position=top-right"
+
+# 声音驱动后端：强制 Wine 使用特定声音服务器
+; ALSA、OSS、PulseAudio 或 PipeWire ("pipewire")
+; AUDIODEV = "pipewire"
