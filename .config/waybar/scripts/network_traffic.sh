@@ -1,77 +1,110 @@
 #!/bin/bash
 
-# network_traffic.sh [-tPOLLING_INTERVAL] [NETWORK_INTERFACE...]
+# network_traffic.sh [-t POLLING_INTERVAL] [NETWORK_INTERFACE...]
 
-getopts t: __ && shift
-isecs=${OPTARG:-1}
-ifaces=($@)
+isecs=1
 : ${rate_max:=1000000}
 
-snore() {
-    local IFS
-    [[ -n "${_snore_fd:-}" ]] || { exec {_snore_fd}<> <(:); } 2>/dev/null
-    read ${1:+-t "$1"} -u $_snore_fd || :
-}
-
-human_readable() {
-  local hrunits=( B K M G T P )
-  local ndigits=${#1}
-  local idxunit=$(( (2 + ndigits) / 3 - 1))
-  local lentrim=$(( ndigits - (idxunit * 3 ) ))
-  echo ${1::$lentrim}${hrunits[$idxunit]}
-}
-
 exit_err() {
-  printf '{"text": "⚠ %s", "tooltip": "%s", "class": "error"}\n' "$@"
-  exit
+  printf '{"text": "⚠ %s", "tooltip": "%s", "class": "error"}\n' "$1" "$2"
+  exit 1
 }
 
-if test ${#ifaces[@]} -gt 0; then
-  for iface in ${ifaces[@]}; do
-    test -h "/sys/class/net/${iface}" || exit_err "${iface}" "${iface} is not an existing network interface name"
-  done
-else
-  ifaces=(/sys/class/net/*)
-  ifaces=(${ifaces[@]##*/})
-  ifaces=(${ifaces[@]//lo/})
-fi
+while getopts "t:" opt; do
+  case $opt in
+    t) isecs="$OPTARG" ;;
+    *) exit_err "Args" "Invalid option" ;;
+  esac
+done
+shift $((OPTIND - 1))
 
-if test ${isecs} -lt 1; then
+if test "${isecs}" -lt 1 2>/dev/null; then
   exit_err "${isecs}" "${isecs} is not a valid polling interval"
 fi
 
-for iface in ${ifaces[@]} aggregate; do
-  declare -a traffic_prev_${iface} traffic_curr_${iface} traffic_delt_${iface}
-  declare -n traffic_prev=traffic_prev_${iface}
-  declare -n traffic_curr=traffic_curr_${iface}
-  declare -n traffic_delt=traffic_delt_${iface}
-  traffic_prev=( 0 0 0 0  0 0 0 0 )
-  traffic_curr=( 0 0 0 0  0 0 0 0 )
-  traffic_delt=( 0 0 0 0  0 0 0 0 )
-done
+declare -A is_target_iface
+if [ $# -gt 0 ]; then
+  for iface in "$@"; do
+    test -h "/sys/class/net/${iface}" || exit_err "${iface}" "${iface} is not an existing network interface name"
+    is_target_iface["$iface"]=1
+  done
+else
+  for sys_iface in /sys/class/net/*; do
+    iface="${sys_iface##*/}"
+    [[ "$iface" != "lo" && "$iface" != "*" ]] && is_target_iface["$iface"]=1
+  done
+fi
 
-while snore ${isecs} ;do
+# 1. 预先初始化文件描述符，避免在 snore 循环中重复创建
+exec {_snore_fd}<> <(:) 2>/dev/null
+snore() {
+  local IFS
+  read ${1:+-t "$1"} -u $_snore_fd || :
+}
+
+# 2. 零子进程（Zero-Subshell）单位格式化函数
+# 参数 1: 字节数数值，参数 2: 接收输出结果的变量名（使用 printf -v 避免 $(...) 子进程）
+human_readable() {
+  local val=${1:-0}
+  local var_name=$2
+  if (( val <= 0 )); then
+    printf -v "$var_name" "0B"
+    return
+  fi
+  local hrunits=( B K M G T P )
+  local ndigits=${#val}
+  local idxunit=$(( (2 + ndigits) / 3 - 1 ))
+  (( idxunit < 0 )) && idxunit=0
+  (( idxunit > 5 )) && idxunit=5
+  local lentrim=$(( ndigits - (idxunit * 3) ))
+  printf -v "$var_name" "%s%s" "${val:0:$lentrim}" "${hrunits[$idxunit]}"
+}
+
+declare -A prev_rx prev_tx
+
+while snore "${isecs}"; do
+  rx_agg_rate=0
+  tx_agg_rate=0
   tooltip=""
-  traffic_delt_aggregate=( 0 0 0 0  0 0 0 0 )
 
-  readarray -s2 proc_net_dev </proc/net/dev
-  while read -a data; do
-    iface=${data[0]%:}
-    test "${ifaces[*]}" = "${ifaces[*]//${iface}/}" && continue
-    declare -n traffic_prev=traffic_prev_${iface}
-    declare -n traffic_curr=traffic_curr_${iface}
-    declare -n traffic_delt=traffic_delt_${iface}
-    traffic_curr=(${data[@]:1:4} ${data[@]:9:4})
-    for i in {0..7}; do
-      (( traffic_delt[i] = ( traffic_curr[i] - traffic_prev[i] ) / isecs ))
-      (( traffic_delt_aggregate[i] += traffic_delt[i] ))
-    done
-    traffic_prev=(${traffic_curr[@]})
-  done <<<"${proc_net_dev[@]}"
+  # 3. 极速行解析：指定 IFS=' :'，用原生 read -a 拆分 /proc/net/dev
+  # 无需正则、无需 Here-String (<<<)、无需外部命令
+  while IFS=' :' read -r -a fields; do
+    dev="${fields[0]}"
+    
+    # 自动跳过表头以及非目标网卡
+    [[ -n "${is_target_iface[$dev]}" ]] || continue
 
-  printf '{"text": "%4s↓  %4s↑ ", "tooltip": "%s",  "percentage": %d}\n'   \
-    $(human_readable ${traffic_delt_aggregate[0]})  \
-    $(human_readable ${traffic_delt_aggregate[4]})  \
-    "${tooltip}"                                    \
-    $(( ( traffic_delt_aggregate[0] + traffic_delt_aggregate[4] ) / rate_max ))
+    rx_b=${fields[1]}
+    tx_b=${fields[9]}
+
+    p_rx=${prev_rx[$dev]:-$rx_b}
+    p_tx=${prev_tx[$dev]:-$tx_b}
+
+    rx_rate=$(( (rx_b - p_rx) / isecs ))
+    tx_rate=$(( (tx_b - p_tx) / isecs ))
+
+    prev_rx[$dev]=$rx_b
+    prev_tx[$dev]=$tx_b
+
+    (( rx_agg_rate += rx_rate ))
+    (( tx_agg_rate += tx_rate ))
+
+    # 直接传参写入变量，不产生命令替换 $(...)
+    human_readable $rx_rate dev_rx_str
+    human_readable $tx_rate dev_tx_str
+    tooltip+="${dev}:  ↓${dev_rx_str}/s   ↑${dev_tx_str}/s\n"
+  done < /proc/net/dev
+
+  tooltip="${tooltip%\\n}"
+
+  percentage=$(( (rx_agg_rate + tx_agg_rate) * 100 / rate_max ))
+  (( percentage > 100 )) && percentage=100
+
+  # 格式化汇总数据（无子进程）
+  human_readable $rx_agg_rate rx_str
+  human_readable $tx_agg_rate tx_str
+
+  printf '{"text": "%4s↓  %4s↑ ", "tooltip": "%s", "percentage": %d}\n' \
+    "$rx_str" "$tx_str" "$tooltip" "$percentage"
 done

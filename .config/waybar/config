@@ -11,7 +11,7 @@
     "custom/launcher": {
     	"format":" ",
     	"on-click": "rofi -show-icons -show drun",
-    	"tooltip": false,
+    	"tooltip": false
     },
 
     "tray": {
@@ -73,7 +73,7 @@
         "tooltip": true,
         "tooltip-format": "Clipboard History",
         "on-click": "~/.config/rofi/scripts/clipboard-manager.sh",
-        "on-click-right": "cliphist wipe" // 右键点击清空所有历史
+        "on-click-right": "cliphist wipe"
     },
 
     "temperature": {
@@ -96,21 +96,22 @@
         "format-wifi": "   {essid}",
         "format-ethernet": "   {ifname}: {ipaddr}/{cidr}",
         "format-disconnected": "⚠  Disconnected",
-        "on-click": "$TERM -e impala" // nmtui
+        "on-click": "$TERM -e impala"
     },
 
     "bluetooth": {
         "format": " {status}",
-        "format-disabled": "  Off",  // 未启用时的图标
-        "format-connected": "  {device_alias}",  // 连接设备后的显示格式
+        "format-disabled": "  Off",
+        "format-connected": "  {device_alias}",
         "tooltip-format": "{num_connections}  connected",
         "on-click": "$TERM -e bluetui"
     },
 
     "custom/network_traffic": {
-        "exec": "~/.config/waybar/scripts/network_traffic.sh",
+        "exec": "~/.config/waybar/bin/network_traffic",
         "return-type": "json",
-        // "format-ethernet": "{icon} {ifname} ⇣{bandwidthDownBytes:>4} ⇡{bandwidthUpBytes:>4}",
+        "format": "{}",
+        "tooltip": true
     },
 
     "backlight": {
@@ -150,7 +151,7 @@
     "custom/power": {
       	"format":"⏻ ",
        	"on-click": "~/.config/rofi/scripts/power-menu.sh",
-      	"tooltip": false,
-    },
+      	"tooltip": false
+    }
 
 }
