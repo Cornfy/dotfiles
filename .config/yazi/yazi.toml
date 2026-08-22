@@ -6,52 +6,52 @@ ratio = [1, 4, 5]
 
 [opener]
 	edit = [
-		{ run = '${EDITOR:-vi} "$@"', desc = "$EDITOR", block = true, for = "unix" },
+		{ run = '${EDITOR:-vi} "%s"', desc = "$EDITOR", block = true, for = "unix" },
 	]
 
 	edit-in-new-window = [
 		# Alacritty
-		# { run = 'alacritty -e nvim "$@"', orphan = true, for = "unix", desc = "Edit in new window (with Alacritty)" },
+		# { run = 'alacritty -e nvim "%s"', orphan = true, for = "unix", desc = "Edit in new window (with Alacritty)" },
 
 		# foot 终端
-		{ run = 'foot ${EDITOR:-vi} "$@"', orphan = true, for = "unix", desc = "Edit in new window (with Foot)" },
+		{ run = 'foot ${EDITOR:-vi} "%s"', orphan = true, for = "unix", desc = "Edit in new window (with Foot)" },
 
 		# Gnome Terminal
-		# { run = 'gnome-terminal -- ${EDITOR:-vi} "$@"', orphan = true, for = "unix", desc = "Edit in new window (with Gnome Terminal)" },
+		# { run = 'gnome-terminal -- ${EDITOR:-vi} "%s"', orphan = true, for = "unix", desc = "Edit in new window (with Gnome Terminal)" },
 
 		# Kitty
-		# { run = 'kitty -e ${EDITOR:-vi} "$@"', orphan = true, for = "unix", desc = "Edit in new window (with Kitty)" },
+		# { run = 'kitty -e ${EDITOR:-vi} "%s"', orphan = true, for = "unix", desc = "Edit in new window (with Kitty)" },
 
 		# WezTerm:
-		# { run = 'wezterm start -- nvim "$@"', orphan = true, for = "unix", desc = "Edit in new window (with WezTerm)" },
+		# { run = 'wezterm start -- nvim "%s"', orphan = true, for = "unix", desc = "Edit in new window (with WezTerm)" },
 	]
 
 	open = [
-		{ run = 'xdg-open "$1"', desc = "Open", for = "linux" },
+		{ run = 'xdg-open "%s"', desc = "Open", for = "linux" },
 	]
 	
 	reveal = [
-		{ run = 'xdg-open "$(dirname "$1")"', desc = "Reveal", for = "linux" },
+		{ run = 'xdg-open "%C"', desc = "Reveal", for = "linux" },
 
 		# 经测试，在使用 ‘y’ 脚本启动 Yazi 时，该方式展示 EXIF 信息，无法按 Enter 返回 Yazi
-		# { run = '''clear; exiftool "$1"; echo "Press enter to exit"; read _''', block = true, desc = "Show EXIF", for = "unix" },
+		# { run = '''clear; exiftool "%1"; echo "Press enter to exit"; read _''', block = true, desc = "Show EXIF", for = "unix" },
 
 		# 使用 bat 作为分页器，避免上述问题
-		{ run = 'exiftool "$1" | bat --paging=always', block = true, desc = "Show EXIF", for = "unix" },
+		{ run = 'exiftool "%s" | bat --paging=always', block = true, desc = "Show EXIF", for = "unix" },
 	]
 	
 	extract = [
-		{ run = 'ya pub extract --list "$@"', desc = "Extract here", for = "unix" },
+		{ run = 'ya pub extract --list "%s"', desc = "Extract here", for = "unix" },
 
-		{ run = 'ouch d -y "$@"', desc = "Extract here with ouch", for = "unix" },
+		{ run = 'ouch d -y "%s"', desc = "Extract here with ouch", for = "unix" },
 	]
 	
 	play = [
-		{ run = 'xdg-open "$1"', desc = "Play", for = "linux" },
+		{ run = 'xdg-open "%s"', desc = "Play", for = "linux" },
 
 		# 同上，使用 bat 避免阻塞
-		# { run = '''mediainfo "$1"; echo "Press enter to exit"; read _''', block = true, desc = "Show media info", for = "unix" },
-		{ run = '''mediainfo "$1" | bat --paging=always''', block = true, desc = "Show media info", for = "unix" },
+		# { run = '''mediainfo "%s"; echo "Press enter to exit"; read _''', block = true, desc = "Show media info", for = "unix" },
+		{ run = '''mediainfo "%s" | bat --paging=always''', block = true, desc = "Show media info", for = "unix" },
 	]
 
 [open]
