@@ -39,9 +39,10 @@ CRF_TARGET_MAP=(
 # 格式: CODEC_NAME|CRF_OFFSET_H264
 CRF_SOURCE_MAP=(
     "h264|0"
-    "hevc|-6" 
+    "hevc|-6"
     "vp9|-5"
-    "av1|-9" 
+    "av1|-9"
+    "png|-12"
 )
 
 # --- 检查和输入解析 ---
@@ -293,6 +294,7 @@ else
     ffmpeg -hide_banner \
         -i "$INPUT" \
         -c:v "$FFMPEG_ENCODER" $FINAL_QUALITY_PARAM \
+        -pix_fmt yuv420p \
         -c:a copy \
         "$OUTPUT"
 fi
