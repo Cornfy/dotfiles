@@ -31,7 +31,7 @@ ratio = [1, 4, 5]
 	]
 	
 	reveal = [
-		{ run = 'xdg-open %C', desc = "Reveal", for = "linux" },
+		{ run = 'xdg-open %d1', desc = "Reveal", for = "linux" },
 
 		# 经测试，在使用 ‘y’ 脚本启动 Yazi 时，该方式展示 EXIF 信息，无法按 Enter 返回 Yazi
 		# { run = '''clear; exiftool %s; echo "Press enter to exit"; read _''', block = true, desc = "Show EXIF", for = "unix" },
