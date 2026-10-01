@@ -25,6 +25,7 @@ end
 # Add user bin directories to PATH
 fish_add_path "$HOME/.local/bin"
 fish_add_path "$HOME/bin"
+fish_add_path "$HOME/.bun/bin"
 
 # GO Proxy Setting
 set -gx GOPROXY "https://goproxy.cn"
@@ -34,3 +35,11 @@ set -gx ANDROID_HOME "$HOME/Android/Sdk"
 set -gx ANDROID_SDK_ROOT "$HOME/Android/Sdk"
 fish_add_path -g "$ANDROID_HOME/cmdline-tools/latest/bin"
 fish_add_path -g "$ANDROID_HOME/platform-tools"
+function update_gradle_user_home --on-variable PWD
+    if test -d $PWD/.gradle
+        set -gx GRADLE_USER_HOME $PWD/.gradle
+    else
+        set -gx GRADLE_USER_HOME $HOME/.gradle
+    end
+end
+update_gradle_user_home
