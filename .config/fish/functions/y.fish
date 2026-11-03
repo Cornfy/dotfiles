@@ -6,4 +6,5 @@ function y
         commandline -f repaint
     end
     rm -f -- "$tmp"
+    commandline -f repaint
 end
