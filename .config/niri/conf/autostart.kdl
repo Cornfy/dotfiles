@@ -6,8 +6,9 @@ spawn-at-startup "systemctl" "--user" "start" "hyprpolkitagent"
 spawn-at-startup "systemctl" "--user" "start" "mpd"
 
 // Other applications
-spawn-at-startup "swaybg" "-i" "/home/elysia/Pictures/wall.png" "-m" "fill"
-spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
+spawn-at-startup "swaybg" "-i" "/home/elysia/Pictures/wall.webp" "-m" "fill"
+spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
+spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
 spawn-at-startup "fcitx5"
 spawn-at-startup "waybar"
 
